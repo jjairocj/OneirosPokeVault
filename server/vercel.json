@@ -1,9 +1,9 @@
 {
-  "version": 2,
-  "buildCommand": "npm run build",
-  "env": {
-    "DATABASE_URL": "@database_url",
-    "JWT_SECRET": "@jwt_secret",
-    "COOKIE_SECRET": "@cookie_secret"
-  }
+    "version": 2,
+    "buildCommand": "npm run build",
+    "env": {
+        "DATABASE_URL": "@database_url",
+        "JWT_SECRET": "@jwt_secret",
+        "COOKIE_SECRET": "@cookie_secret"
+    }
 }
