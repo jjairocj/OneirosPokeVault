@@ -8,6 +8,7 @@ import tcgdex from '../lib/tcgdex';
 import { Query } from '@tcgdex/sdk';
 import CardDetailModal from '../components/CardDetailModal';
 import ConfirmModal from '../components/ConfirmModal';
+import { downloadCSV } from '../lib/reports';
 
 // --- Variant detection ---
 export function isVariantCardName(name: string): boolean {
@@ -324,6 +325,38 @@ export default function MasterDex() {
     [assignSlot]
   );
 
+  const handleDownloadOwned = useCallback(() => {
+    // Only base slots for now as requested "expansion"
+    const owned = ALL_DEX_IDS
+      .map(id => ({ id, slot: getBaseSlot(id) }))
+      .filter(item => !!item.slot)
+      .map(item => ({
+        name: item.slot?.cardName || getPokemonName(item.id) || '',
+        expansion: item.slot?.cardId.split('-')[0] || '' // Set ID as fallback for "expansion"
+      }));
+
+    downloadCSV(
+      t('report.filename.owned'),
+      owned,
+      [
+        { key: 'name', label: t('report.csvHeader.name') },
+        { key: 'expansion', label: t('report.csvHeader.expansion') }
+      ]
+    );
+  }, [getBaseSlot, getPokemonName, t]);
+
+  const handleDownloadMissing = useCallback(() => {
+    const missing = ALL_DEX_IDS
+      .filter(id => !getBaseSlot(id))
+      .map(id => ({ name: getPokemonName(id) || `#${id}` }));
+
+    downloadCSV(
+      t('report.filename.missing'),
+      missing,
+      [{ key: 'name', label: t('report.csvHeader.name') }]
+    );
+  }, [getBaseSlot, getPokemonName, t]);
+
   if (!user || !isPro) return null;
 
   return (
@@ -357,13 +390,29 @@ export default function MasterDex() {
           </div>
         </div>
 
-        {/* Progress bar */}
-        <div className="max-w-7xl mx-auto px-4 pb-3">
-          <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-vault-600 to-vault-400 rounded-full transition-all duration-700"
-              style={{ width: `${ALL_DEX_IDS.length > 0 ? (baseCount / ALL_DEX_IDS.length) * 100 : 0}%` }}
-            />
+        {/* PRO Reports and Progress */}
+        <div className="max-w-7xl mx-auto px-4 pb-3 flex flex-col sm:flex-row sm:items-center gap-3">
+          <div className="flex-1">
+            <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-vault-600 to-vault-400 rounded-full transition-all duration-700"
+                style={{ width: `${ALL_DEX_IDS.length > 0 ? (baseCount / ALL_DEX_IDS.length) * 100 : 0}%` }}
+              />
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleDownloadOwned}
+              className="px-3 py-1 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded text-xs transition-colors flex items-center gap-1.5"
+            >
+              📥 {t('report.downloadOwned')}
+            </button>
+            <button
+              onClick={handleDownloadMissing}
+              className="px-3 py-1 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded text-xs transition-colors flex items-center gap-1.5"
+            >
+              📥 {t('report.downloadMissing')}
+            </button>
           </div>
         </div>
       </div>

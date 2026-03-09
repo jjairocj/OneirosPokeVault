@@ -3,6 +3,8 @@ import { useCards, CardSummary } from '../hooks/useCards';
 import { useLanguage } from '../hooks/useLanguage';
 import CardItem from './CardItem';
 import CardDetailModal from './CardDetailModal';
+import { useAuth } from '../hooks/useAuth';
+import { downloadCSV } from '../lib/reports';
 
 type SourceFilter = 'all' | 'tcg' | 'pocket';
 
@@ -26,9 +28,12 @@ interface EntryViewProps {
 
 export default function EntryView({ entryName, isOwned, onToggleOwned, onCardsLoaded }: EntryViewProps) {
   const { t } = useLanguage();
+  const { user } = useAuth();
   const { cards, loading, error, searchByName, searchBySet } = useCards();
   const [source, setSource] = useState<SourceFilter>('all');
   const [detailCardId, setDetailCardId] = useState<string | null>(null);
+
+  const isPro = user?.plan === 'pro' || user?.role === 'admin';
 
   const isSetEntry = entryName.startsWith('set:');
   const displayName = isSetEntry ? entryName.split(':')[2] || entryName : entryName;
@@ -59,6 +64,36 @@ export default function EntryView({ entryName, isOwned, onToggleOwned, onCardsLo
 
   const ownedCount = filtered.filter((c) => isOwned(c.id)).length;
   const percentage = filtered.length > 0 ? Math.round((ownedCount / filtered.length) * 100) : 0;
+
+  const handleDownloadOwned = () => {
+    const owned = filtered
+      .filter(c => isOwned(c.id))
+      .map(c => ({
+        name: c.name,
+        expansion: c.id.substring(0, c.id.lastIndexOf('-'))
+      }));
+
+    downloadCSV(
+      t('report.filename.owned'),
+      owned,
+      [
+        { key: 'name', label: t('report.csvHeader.name') },
+        { key: 'expansion', label: t('report.csvHeader.expansion') }
+      ]
+    );
+  };
+
+  const handleDownloadMissing = () => {
+    const missing = filtered
+      .filter(c => !isOwned(c.id))
+      .map(c => ({ name: c.name }));
+
+    downloadCSV(
+      t('report.filename.missing'),
+      missing,
+      [{ key: 'name', label: t('report.csvHeader.name') }]
+    );
+  };
 
   if (loading) {
     return (
@@ -112,6 +147,25 @@ export default function EntryView({ entryName, isOwned, onToggleOwned, onCardsLo
             <span className="ml-1.5 text-xs opacity-70">{tab.count}</span>
           </button>
         ))}
+
+        {isPro && (
+          <div className="flex items-center gap-2 ml-auto border-l border-gray-700 pl-4">
+            <button
+              onClick={handleDownloadOwned}
+              className="text-gray-400 hover:text-white text-xs flex items-center gap-1 transition-colors"
+              title={t('report.downloadOwned')}
+            >
+              📥 {t('report.downloadOwned')}
+            </button>
+            <button
+              onClick={handleDownloadMissing}
+              className="text-gray-400 hover:text-white text-xs flex items-center gap-1 transition-colors"
+              title={t('report.downloadMissing')}
+            >
+              📥 {t('report.downloadMissing')}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Progress bar */}

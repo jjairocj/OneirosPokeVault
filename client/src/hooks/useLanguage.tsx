@@ -146,6 +146,14 @@ const translations = {
     'common.confirm': 'Confirm',
     'common.cancel': 'Cancel',
     'common.warning': 'Warning',
+
+    // Reports
+    'report.downloadOwned': 'Download Owned',
+    'report.downloadMissing': 'Download Missing',
+    'report.csvHeader.name': 'Name',
+    'report.csvHeader.expansion': 'Expansion',
+    'report.filename.owned': 'owned_cards',
+    'report.filename.missing': 'missing_cards',
   },
   es: {
     'header.signIn': 'Iniciar sesion',
@@ -279,6 +287,14 @@ const translations = {
     'common.confirm': 'Confirmar',
     'common.cancel': 'Cancelar',
     'common.warning': 'Advertencia',
+
+    // Reports
+    'report.downloadOwned': 'Descargar Poseidas',
+    'report.downloadMissing': 'Descargar Faltantes',
+    'report.csvHeader.name': 'Nombre',
+    'report.csvHeader.expansion': 'Expansion',
+    'report.filename.owned': 'cartas_poseidas',
+    'report.filename.missing': 'cartas_faltantes',
   },
 } as const;
 
