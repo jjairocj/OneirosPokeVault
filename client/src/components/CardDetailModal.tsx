@@ -33,6 +33,11 @@ interface FullCard {
     firstEdition?: boolean;
     wPromo?: boolean;
   };
+  abilities?: Array<{
+    name: string;
+    effect: string;
+    type?: string;
+  }>;
   attacks?: Array<{
     name: string;
     cost?: string[];
@@ -209,6 +214,30 @@ export default function CardDetailModal({ cardId, onClose }: CardDetailModalProp
                 </div>
               </div>
             </div>
+
+            {/* Abilities */}
+            {card.abilities && card.abilities.length > 0 && (
+              <div>
+                <h4 className="text-sm font-semibold text-gray-400 mb-2">{t('detail.abilities')}</h4>
+                <div className="space-y-2">
+                  {card.abilities.map((ability, i) => (
+                    <div key={i} className="bg-gray-800/50 rounded-lg p-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <span className="font-medium text-sm text-gray-200">{ability.name}</span>
+                          {ability.type && (
+                            <span className="text-xs text-gray-500 ml-2">({ability.type})</span>
+                          )}
+                        </div>
+                      </div>
+                      {ability.effect && (
+                        <p className="text-xs text-gray-400 mt-1">{ability.effect}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Attacks */}
             {card.attacks && card.attacks.length > 0 && (
