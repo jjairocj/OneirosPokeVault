@@ -211,6 +211,171 @@ function PokemonDexManager() {
           </tbody>
         </table>
       </div>
+
+      {/* Collection Report Section */}
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <CollectionReportManager />
+      </div>
+    </div>
+  );
+}
+
+// --- Collection Report Management Section ---
+function CollectionReportManager() {
+  const { t } = useLanguage();
+  const [report, setReport] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [activeTab, setActiveTab] = useState<'existing' | 'missing'>('existing');
+
+  useEffect(() => {
+    loadReport();
+  }, []);
+
+  async function loadReport() {
+    setLoading(true);
+    try {
+      const res = await apiFetch('/api/admin/collection-report');
+      if (res.ok) {
+        const data = await res.json();
+        setReport(data);
+      }
+    } catch (error) {
+      console.error('Load report error:', error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function generateReport() {
+    setGenerating(true);
+    try {
+      const res = await apiFetch('/api/admin/collection-report', {
+        method: 'POST'
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setReport(data);
+      }
+    } catch (error) {
+      console.error('Generate report error:', error);
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold text-gray-200">Collection Report</h2>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={generateReport}
+            disabled={generating}
+            className="px-4 py-2 bg-vault-600 hover:bg-vault-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors"
+          >
+            {generating ? 'Generating...' : 'Generate Report'}
+          </button>
+          <button
+            type="button"
+            onClick={loadReport}
+            disabled={loading}
+            className="px-4 py-2 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors"
+          >
+            {loading ? 'Loading...' : 'Refresh'}
+          </button>
+        </div>
+      </div>
+
+      {report && (
+        <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
+          <div className="mb-6">
+            <p className="text-sm text-gray-400">
+              Generated: {new Date(report.generatedAt).toLocaleString()}
+            </p>
+            <p className="text-lg font-semibold text-gray-200 mt-2">
+              Total Collection Value: €{report.totalValue.toFixed(2)}
+            </p>
+          </div>
+
+          {/* Tabs */}
+          <div className="flex border-b border-gray-700 mb-6">
+            <button
+              type="button"
+              onClick={() => setActiveTab('existing')}
+              className={`px-4 py-2 font-medium text-sm transition-colors ${
+                activeTab === 'existing'
+                  ? 'text-vault-400 border-b-2 border-vault-400'
+                  : 'text-gray-400 hover:text-gray-300'
+              }`}
+            >
+              Existing Cards ({report.existingCards?.length || 0})
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('missing')}
+              className={`px-4 py-2 font-medium text-sm transition-colors ${
+                activeTab === 'missing'
+                  ? 'text-vault-400 border-b-2 border-vault-400'
+                  : 'text-gray-400 hover:text-gray-300'
+              }`}
+            >
+              Missing Pokémon ({report.missingPokemon?.length || 0})
+            </button>
+          </div>
+
+          {/* Existing Cards Tab */}
+          {activeTab === 'existing' && (
+            <div className="space-y-3">
+              {report.existingCards?.map((card: any, index: number) => (
+                <div key={card.cardId} className="flex items-center gap-4 bg-gray-800/30 rounded-lg p-4">
+                  <span className="text-sm text-gray-500 w-8">#{index + 1}</span>
+                  <img
+                    src={card.image ? `${card.image}/low.webp` : '/card-back.svg'}
+                    alt={card.name}
+                    className="w-12 h-16 object-cover rounded"
+                    onError={(e) => { (e.target as HTMLImageElement).src = '/card-back.svg'; }}
+                  />
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-200">{card.name}</p>
+                    <p className="text-xs text-gray-500">{card.cardId}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold text-vault-400">€{card.price.toFixed(2)}</p>
+                  </div>
+                </div>
+              )) || <p className="text-gray-500">No existing cards found.</p>}
+            </div>
+          )}
+
+          {/* Missing Pokémon Tab */}
+          {activeTab === 'missing' && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {report.missingPokemon?.map((pokemon: any) => (
+                <div key={pokemon.dexId} className="flex items-center gap-3 bg-gray-800/30 rounded-lg p-3">
+                  <img
+                    src={pokemon.image || '/card-back.svg'}
+                    alt={pokemon.name}
+                    className="w-12 h-12 object-cover rounded-full"
+                    onError={(e) => { (e.target as HTMLImageElement).src = '/card-back.svg'; }}
+                  />
+                  <div>
+                    <p className="font-medium text-gray-200">#{String(pokemon.dexId).padStart(3, '0')}</p>
+                    <p className="text-sm text-gray-400 capitalize">{pokemon.name}</p>
+                  </div>
+                </div>
+              )) || <p className="text-gray-500">No missing Pokémon found.</p>}
+            </div>
+          )}
+        </div>
+      )}
+
+      {!report && !loading && (
+        <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700 text-center">
+          <p className="text-gray-400">No report generated yet. Click "Generate Report" to create one.</p>
+        </div>
+      )}
     </div>
   );
 }

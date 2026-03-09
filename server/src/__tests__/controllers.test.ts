@@ -142,22 +142,21 @@ describe('collections controller', () => {
     });
 
     it('should return 403 if free plan limit reached', async () => {
-      // Mock user query
-      const selectChain = {
+      // Mock user query - first call
+      const userSelectChain = {
         from: vi.fn().mockReturnThis(),
         where: vi.fn().mockReturnThis(),
         limit: vi.fn(),
       };
-      // First call: get user -> free plan
-      selectChain.limit.mockResolvedValueOnce([{ id: 1, plan: 'free' }]);
-      // Second call: get existing collections -> 3 entries
-      (db.select as any).mockReturnValueOnce(selectChain);
+      userSelectChain.limit.mockResolvedValueOnce([{ id: 1, plan: 'free' }]);
+      (db.select as any).mockReturnValueOnce(userSelectChain);
 
-      const selectChain2 = {
+      // Mock collections query - second call
+      const collectionsSelectChain = {
         from: vi.fn().mockReturnThis(),
-        where: vi.fn().mockResolvedValue([{}, {}, {}]),
+        where: vi.fn().mockResolvedValue([{}, {}, {}, {}, {}]), // 5 collections to exceed FREE_LIMIT
       };
-      (db.select as any).mockReturnValueOnce(selectChain2);
+      (db.select as any).mockReturnValueOnce(collectionsSelectChain);
 
       const req = mockReq({ body: { entry_name: 'Charizard' } });
       const res = mockRes();

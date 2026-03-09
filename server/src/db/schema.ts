@@ -57,12 +57,21 @@ export const masterdexSlots = pgTable(
     userId: integer('user_id')
       .references(() => users.id, { onDelete: 'cascade' })
       .notNull(),
-    slotType: text('slot_type').notNull(), // 'base' | 'variant'
-    slotKey: text('slot_key').notNull(),   // dexId string for base, cardId for variant
-    cardId: text('card_id').notNull(),
-    cardName: text('card_name'),
-    cardImage: text('card_image'),
+    slotType: text('slot_type').notNull(), // 'pokemon', 'trainer', 'energy'
+    slotKey: text('slot_key').notNull(), // dexId for pokemon, cardId for others
+    cardId: text('card_id'), // TCGdex card ID
+    cardName: text('card_name'), // Card name for display
+    cardImage: text('card_image'), // Card image URL
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [unique().on(t.userId, t.slotType, t.slotKey)]
 );
+
+export const collectionReports = pgTable('collection_reports', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id')
+    .references(() => users.id, { onDelete: 'cascade' })
+    .notNull(),
+  reportData: text('report_data').notNull(), // JSON string
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
