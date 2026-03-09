@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { useLanguage } from '../hooks/useLanguage';
+import ConfirmModal from './ConfirmModal';
 
 interface CardItemProps {
   id: string;
@@ -13,6 +14,7 @@ interface CardItemProps {
 export default function CardItem({ id, name, image, owned, onToggle, onDetails }: CardItemProps) {
   const { t } = useLanguage();
   const [tapped, setTapped] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const isTouchRef = useRef(false);
 
   const handleTouchStart = () => {
@@ -20,7 +22,8 @@ export default function CardItem({ id, name, image, owned, onToggle, onDetails }
   };
 
   const handleClick = () => {
-    if (owned && !window.confirm(t('card.confirmDelete'))) {
+    if (owned) {
+      setShowConfirm(true);
       return;
     }
 
@@ -69,7 +72,11 @@ export default function CardItem({ id, name, image, owned, onToggle, onDetails }
           type="button"
           onClick={(e) => {
             e.stopPropagation();
-            onToggle(id);
+            if (owned) {
+              setShowConfirm(true);
+            } else {
+              onToggle(id);
+            }
             setTapped(false);
           }}
           className="pointer-events-auto text-white font-bold text-sm bg-vault-600 hover:bg-vault-700 active:bg-vault-800 px-4 py-2 rounded-lg transition-colors"
@@ -114,6 +121,17 @@ export default function CardItem({ id, name, image, owned, onToggle, onDetails }
         <p className="text-[10px] sm:text-xs text-white font-medium truncate">{name}</p>
         <p className="text-[9px] sm:text-[10px] text-gray-400">{id}</p>
       </div>
+
+      {showConfirm && (
+        <ConfirmModal
+          message={t('card.confirmDelete')}
+          onConfirm={() => {
+            onToggle(id);
+            setShowConfirm(false);
+          }}
+          onCancel={() => setShowConfirm(false)}
+        />
+      )}
     </div>
   );
 }

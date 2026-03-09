@@ -6,6 +6,8 @@ import { usePokemonDex } from '../hooks/usePokemonDex';
 import { useLanguage } from '../hooks/useLanguage';
 import tcgdex from '../lib/tcgdex';
 import { Query } from '@tcgdex/sdk';
+import CardDetailModal from '../components/CardDetailModal';
+import ConfirmModal from '../components/ConfirmModal';
 
 // --- Variant detection ---
 export function isVariantCardName(name: string): boolean {
@@ -146,17 +148,18 @@ interface PokemonSlotProps {
   slot?: MasterDexSlot;
   onOpenPicker: (dexId: number, name: string) => void;
   onClear: (dexId: number) => void;
+  onShowDetails: (cardId: string) => void;
   t: (key: any) => string;
 }
 
-function PokemonSlot({ dexId, name, slot, onOpenPicker, onClear, t }: PokemonSlotProps) {
+function PokemonSlot({ dexId, name, slot, onOpenPicker, onClear, onShowDetails, t }: PokemonSlotProps) {
   const isFilled = !!slot;
 
   return (
     <div className="group relative flex flex-col items-center gap-1">
       <button
         type="button"
-        onClick={() => onOpenPicker(dexId, name)}
+        onClick={() => isFilled ? onShowDetails(slot.cardId) : onOpenPicker(dexId, name)}
         className={`relative w-full aspect-[2.5/3.5] rounded-lg overflow-hidden border-2 transition-all ${
           isFilled
             ? 'border-vault-500 shadow-md shadow-vault-500/20'
@@ -197,9 +200,7 @@ function PokemonSlot({ dexId, name, slot, onOpenPicker, onClear, t }: PokemonSlo
           type="button"
           onClick={(e) => {
             e.stopPropagation();
-            if (window.confirm(t('card.confirmDelete'))) {
-              onClear(dexId);
-            }
+            onClear(dexId);
           }}
           className="absolute -top-1 -left-1 bg-red-500/80 text-white rounded-full w-4 h-4 text-[8px] items-center justify-center hidden group-hover:flex"
         >
@@ -214,13 +215,18 @@ function PokemonSlot({ dexId, name, slot, onOpenPicker, onClear, t }: PokemonSlo
 interface VariantSlotProps {
   slot: MasterDexSlot;
   onClear: (slot: MasterDexSlot) => void;
+  onShowDetails: (cardId: string) => void;
   t: (key: any) => string;
 }
 
-function VariantSlot({ slot, onClear, t }: VariantSlotProps) {
+function VariantSlot({ slot, onClear, onShowDetails, t }: VariantSlotProps) {
   return (
     <div className="group relative flex flex-col items-center gap-1">
-      <div className="relative w-full aspect-[2.5/3.5] rounded-lg overflow-hidden border-2 border-amber-500/50 shadow-md shadow-amber-500/10">
+      <button
+        type="button"
+        onClick={() => onShowDetails(slot.cardId)}
+        className="relative w-full aspect-[2.5/3.5] rounded-lg overflow-hidden border-2 border-amber-500/50 shadow-md shadow-amber-500/10"
+      >
         {slot.cardImage ? (
           <img
             src={slot.cardImage}
@@ -235,16 +241,15 @@ function VariantSlot({ slot, onClear, t }: VariantSlotProps) {
         )}
         <button
           type="button"
-          onClick={() => {
-            if (window.confirm(t('card.confirmDelete'))) {
-              onClear(slot);
-            }
+          onClick={(e) => {
+            e.stopPropagation();
+            onClear(slot);
           }}
           className="absolute -top-1 -left-1 bg-red-500/80 text-white rounded-full w-4 h-4 text-[8px] items-center justify-center hidden group-hover:flex"
         >
           ✕
         </button>
-      </div>
+      </button>
       <p className="text-[10px] text-amber-400/80 truncate w-full text-center">{slot.cardName}</p>
     </div>
   );
@@ -264,6 +269,8 @@ export default function MasterDex() {
   const [activeTab, setActiveTab] = useState<'base' | 'variants'>('base');
   const [page, setPage] = useState(1);
   const [picker, setPicker] = useState<{ dexId?: number; type: 'base' | 'variant'; initialSearch?: string } | null>(null);
+  const [viewingCard, setViewingCard] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ type: 'base' | 'variant'; key: string; dexId?: number } | null>(null);
   const [sortOrder, setSortOrder] = useState<'dex' | 'alpha'>('dex');
   const [dexSearch, setDexSearch] = useState('');
 
@@ -466,7 +473,8 @@ export default function MasterDex() {
                   onOpenPicker={(id, name) => {
                     setPicker({ dexId: id, type: 'base', initialSearch: name });
                   }}
-                  onClear={(id) => unassignSlot('base', String(id))}
+                  onClear={(id) => setConfirmDelete({ type: 'base', key: String(id), dexId: id })}
+                  onShowDetails={setViewingCard}
                   t={t}
                 />
               ))}
@@ -543,7 +551,8 @@ export default function MasterDex() {
                   <VariantSlot
                     key={slot.slotKey}
                     slot={slot}
-                    onClear={(s) => unassignSlot('variant', s.slotKey)}
+                    onClear={(s) => setConfirmDelete({ type: 'variant', key: s.slotKey })}
+                    onShowDetails={setViewingCard}
                     t={t}
                   />
                 ))}
@@ -552,6 +561,27 @@ export default function MasterDex() {
           </div>
         )}
       </div>
+
+      {/* Confirmation Modal */}
+      {confirmDelete && (
+        <ConfirmModal
+          message={t('card.confirmDelete')}
+          onConfirm={async () => {
+            const { type, key } = confirmDelete;
+            await unassignSlot(type, key);
+            setConfirmDelete(null);
+          }}
+          onCancel={() => setConfirmDelete(null)}
+        />
+      )}
+
+      {/* Card Details Modal */}
+      {viewingCard && (
+        <CardDetailModal
+          cardId={viewingCard}
+          onClose={() => setViewingCard(null)}
+        />
+      )}
 
       {/* Card Picker Modal */}
       {picker && (

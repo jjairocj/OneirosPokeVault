@@ -141,6 +141,11 @@ const translations = {
     'masterdex.sortAlpha': 'Alphabetical',
     'masterdex.loadingNames': 'Loading names',
     'masterdex.searchPokemon': 'Search Pokémon...',
+
+    // Common
+    'common.confirm': 'Confirm',
+    'common.cancel': 'Cancel',
+    'common.warning': 'Warning',
   },
   es: {
     'header.signIn': 'Iniciar sesion',
@@ -269,6 +274,11 @@ const translations = {
     'masterdex.sortAlpha': 'Alfabetico',
     'masterdex.loadingNames': 'Cargando nombres',
     'masterdex.searchPokemon': 'Buscar Pokémon...',
+
+    // Common
+    'common.confirm': 'Confirmar',
+    'common.cancel': 'Cancelar',
+    'common.warning': 'Advertencia',
   },
 } as const;
 
