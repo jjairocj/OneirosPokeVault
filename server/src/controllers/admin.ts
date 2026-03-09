@@ -89,29 +89,38 @@ export async function generateCollectionReport(req: AuthRequest, res: Response):
     // Calculate prices for owned cards
     const existingCards: any[] = [];
     let totalValue = 0;
-    console.log('Processing cards for pricing...');
+    console.log('Processing owned cards for pricing...');
 
-    for (const slot of masterdexCards) {
-      if (slot.cardId && ownedCardIds.has(slot.cardId)) {
-        try {
-          console.log(`Fetching card data for: ${slot.cardId}`);
-          const cardData = await sdk.card.get(slot.cardId);
-          if (cardData) {
-            const price = (cardData as any).pricing?.cardmarket?.avg || (cardData as any).pricing?.tcgplayer?.normal?.midPrice || 0;
-            console.log(`Card ${slot.cardId} price: ${price}`);
-            existingCards.push({
-              cardId: slot.cardId,
-              name: slot.cardName || cardData.name,
-              image: slot.cardImage || (cardData as any).image,
-              price: price,
-              slotType: slot.slotType,
-              slotKey: slot.slotKey
-            });
-            totalValue += price;
-          }
-        } catch (error) {
-          console.error(`Error fetching card ${slot.cardId}:`, error);
+    for (const ownedCard of owned) {
+      try {
+        console.log(`Fetching card data for: ${ownedCard.cardId}`);
+        const cardData = await sdk.card.get(ownedCard.cardId);
+        console.log(`Card data received for ${ownedCard.cardId}:`, {
+          name: cardData?.name,
+          hasPricing: !!(cardData && (cardData as any).pricing),
+          pricingKeys: cardData ? Object.keys((cardData as any).pricing || {}) : []
+        });
+        if (cardData) {
+          const price = (cardData as any).pricing?.cardmarket?.avg || (cardData as any).pricing?.tcgplayer?.normal?.midPrice || 0;
+          console.log(`Card ${ownedCard.cardId} final price: ${price}`);
+
+          // Find corresponding masterdex slot for additional info
+          const slotInfo = masterdexCards.find(slot => slot.cardId === ownedCard.cardId);
+
+          existingCards.push({
+            cardId: ownedCard.cardId,
+            name: slotInfo?.cardName || cardData.name,
+            image: slotInfo?.cardImage || (cardData as any).image,
+            price: price,
+            slotType: slotInfo?.slotType || 'unknown',
+            slotKey: slotInfo?.slotKey || 'unknown'
+          });
+          totalValue += price;
+        } else {
+          console.log(`No card data found for ${ownedCard.cardId}`);
         }
+      } catch (error) {
+        console.error(`Error fetching card ${ownedCard.cardId}:`, error);
       }
     }
 
@@ -120,72 +129,50 @@ export async function generateCollectionReport(req: AuthRequest, res: Response):
     // Sort existing cards by price descending
     existingCards.sort((a, b) => b.price - a.price);
 
-    // Find missing cards - get dexIds from masterdex that don't have owned cards
-    const ownedDexIds = new Set(
-      masterdexCards
-        .filter(slot => slot.cardId && ownedCardIds.has(slot.cardId))
-        .map(slot => parseInt(slot.slotKey))
-        .filter(id => !isNaN(id))
-    );
+    // Get all available Pokemon from pokemonDex
+    const allPokemon = await db.select().from(pokemonDex);
+    console.log(`Total Pokemon in dex: ${allPokemon.length}`);
 
-    const allDexIds = new Set(
-      masterdexCards
-        .map(slot => parseInt(slot.slotKey))
-        .filter(id => !isNaN(id))
-    );
-
-    const missingDexIds = Array.from(allDexIds).filter(id => !ownedDexIds.has(id));
-    console.log('Missing dex IDs:', missingDexIds);
-
-    // Fetch missing Pokemon data from PokeAPI GraphQL
-    const missingPokemon: any[] = [];
-
-    if (missingDexIds.length > 0) {
-      console.log('Fetching missing Pokemon data from PokeAPI...');
+    // Get owned Pokemon dexIds from owned cards
+    const ownedDexIds = new Set();
+    for (const ownedCard of owned) {
       try {
-        const query = `
-          query GetPokemon($ids: [Int!]!) {
-            pokemon_v2_pokemon(where: {id: {_in: $ids}}) {
-              id
-              name
-              pokemon_v2_pokemonsprites {
-                sprites
-              }
-            }
-          }
-        `;
-
-        const response = await fetch('https://beta.pokeapi.co/graphql/v1beta', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            query,
-            variables: { ids: missingDexIds }
-          })
-        });
-
-        console.log('PokeAPI response status:', response.status);
-
-        if (response.ok) {
-          const data = await response.json();
-          console.log('PokeAPI data received:', data.data?.pokemon_v2_pokemon?.length || 0, 'pokemon');
-          for (const pokemon of data.data.pokemon_v2_pokemon || []) {
-            const sprites = pokemon.pokemon_v2_pokemonsprites?.[0]?.sprites;
-            const image = sprites?.front_default || null;
-            console.log(`Pokemon ${pokemon.id} (${pokemon.name}): image = ${image}`);
-            missingPokemon.push({
-              dexId: pokemon.id,
-              name: pokemon.name,
-              image: image
-            });
-          }
-        } else {
-          console.error('PokeAPI request failed:', response.status, response.statusText);
+        const cardData = await sdk.card.get(ownedCard.cardId);
+        if (cardData && (cardData as any).dexId && Array.isArray((cardData as any).dexId)) {
+          ownedDexIds.add((cardData as any).dexId[0]);
         }
       } catch (error) {
-        console.error('Error fetching from PokeAPI:', error);
+        console.error(`Error getting dexId for card ${ownedCard.cardId}:`, error);
+      }
+    }
+    console.log(`User owns Pokemon with dexIds:`, Array.from(ownedDexIds));
+
+    // Find missing Pokemon
+    const missingPokemon: any[] = [];
+    for (const pokemon of allPokemon) {
+      if (!ownedDexIds.has(pokemon.dexId)) {
+        try {
+          // Get Pokemon data from PokeAPI
+          const pokeResponse = await fetch(`https://pokeapi.co/api/v2/pokemon/${pokemon.dexId}`);
+          const pokeData = await pokeResponse.json();
+          const sprite = pokeData.sprites?.front_default || pokeData.sprites?.other?.['official-artwork']?.front_default;
+
+          missingPokemon.push({
+            dexId: pokemon.dexId,
+            name: pokemon.name,
+            image: sprite,
+            type: pokemon.type
+          });
+        } catch (error) {
+          console.error(`Error fetching PokeAPI data for dexId ${pokemon.dexId}:`, error);
+          // Fallback without image
+          missingPokemon.push({
+            dexId: pokemon.dexId,
+            name: pokemon.name,
+            image: null,
+            type: pokemon.type
+          });
+        }
       }
     }
 
