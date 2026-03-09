@@ -76,7 +76,7 @@ function CardPickerModal({ initialSearch, slotType, onAssign, onClose }: CardPic
 
       const filtered = cards
         .filter((c) => !c.image?.includes('/tcgp/')) // Exclude TCG Pocket
-        .filter((c) => slotType === 'variant' ? isVariantCardName(c.name) : !isVariantCardName(c.name))
+        .filter((c) => slotType === 'variant' ? isVariantCardName(c.name) : true)
         .map((c) => ({
           id: c.id,
           name: getCleanPokemonName(c),
