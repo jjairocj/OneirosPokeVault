@@ -56,34 +56,49 @@ export async function updateUserPlan(req: AuthRequest, res: Response): Promise<v
 export async function generateCollectionReport(req: AuthRequest, res: Response): Promise<void> {
   try {
     const userId = req.userId!;
+    console.log('Generating collection report for user:', userId);
+
+    // Test basic database connectivity
+    console.log('Testing database connectivity...');
+    const testQuery = await db.select().from(users).limit(1);
+    console.log('Database test successful, found users:', testQuery.length);
 
     // Get all masterdex slots for user
+    console.log('Fetching masterdex slots...');
     const masterdexCards = await db
       .select()
       .from(masterdexSlots)
       .where(eq(masterdexSlots.userId, userId));
+    console.log('Found masterdex slots:', masterdexCards.length);
 
     // Get owned cards
+    console.log('Fetching owned cards...');
     const owned = await db
       .select({ cardId: ownedCards.cardId })
       .from(ownedCards)
       .where(eq(ownedCards.userId, userId));
+    console.log('Found owned cards:', owned.length);
 
     const ownedCardIds = new Set(owned.map(o => o.cardId));
+    console.log('Owned card IDs:', Array.from(ownedCardIds));
 
     // Initialize TCGdex
+    console.log('Initializing TCGdex...');
     const sdk = new TCGdex('en');
 
     // Calculate prices for owned cards
     const existingCards: any[] = [];
     let totalValue = 0;
+    console.log('Processing cards for pricing...');
 
     for (const slot of masterdexCards) {
       if (slot.cardId && ownedCardIds.has(slot.cardId)) {
         try {
+          console.log(`Fetching card data for: ${slot.cardId}`);
           const cardData = await sdk.card.get(slot.cardId);
           if (cardData) {
             const price = (cardData as any).pricing?.cardmarket?.avg || (cardData as any).pricing?.tcgplayer?.normal?.midPrice || 0;
+            console.log(`Card ${slot.cardId} price: ${price}`);
             existingCards.push({
               cardId: slot.cardId,
               name: slot.cardName || cardData.name,
@@ -99,6 +114,8 @@ export async function generateCollectionReport(req: AuthRequest, res: Response):
         }
       }
     }
+
+    console.log(`Processed ${existingCards.length} existing cards, total value: ${totalValue}`);
 
     // Sort existing cards by price descending
     existingCards.sort((a, b) => b.price - a.price);
@@ -118,47 +135,60 @@ export async function generateCollectionReport(req: AuthRequest, res: Response):
     );
 
     const missingDexIds = Array.from(allDexIds).filter(id => !ownedDexIds.has(id));
+    console.log('Missing dex IDs:', missingDexIds);
 
     // Fetch missing Pokemon data from PokeAPI GraphQL
     const missingPokemon: any[] = [];
 
     if (missingDexIds.length > 0) {
-      const query = `
-        query GetPokemon($ids: [Int!]!) {
-          pokemon_v2_pokemon(where: {id: {_in: $ids}}) {
-            id
-            name
-            pokemon_v2_pokemonsprites {
-              sprites
+      console.log('Fetching missing Pokemon data from PokeAPI...');
+      try {
+        const query = `
+          query GetPokemon($ids: [Int!]!) {
+            pokemon_v2_pokemon(where: {id: {_in: $ids}}) {
+              id
+              name
+              pokemon_v2_pokemonsprites {
+                sprites
+              }
             }
           }
-        }
-      `;
+        `;
 
-      const response = await fetch('https://beta.pokeapi.co/graphql/v1beta', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          query,
-          variables: { ids: missingDexIds }
-        })
-      });
+        const response = await fetch('https://beta.pokeapi.co/graphql/v1beta', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            query,
+            variables: { ids: missingDexIds }
+          })
+        });
 
-      if (response.ok) {
-        const data = await response.json();
-        for (const pokemon of data.data.pokemon_v2_pokemon || []) {
-          const sprites = pokemon.pokemon_v2_pokemonsprites?.[0]?.sprites;
-          const image = sprites ? JSON.parse(sprites).front_default : null;
-          missingPokemon.push({
-            dexId: pokemon.id,
-            name: pokemon.name,
-            image: image
-          });
+        console.log('PokeAPI response status:', response.status);
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log('PokeAPI data received:', data.data?.pokemon_v2_pokemon?.length || 0, 'pokemon');
+          for (const pokemon of data.data.pokemon_v2_pokemon || []) {
+            const sprites = pokemon.pokemon_v2_pokemonsprites?.[0]?.sprites;
+            const image = sprites ? JSON.parse(sprites).front_default : null;
+            missingPokemon.push({
+              dexId: pokemon.id,
+              name: pokemon.name,
+              image: image
+            });
+          }
+        } else {
+          console.error('PokeAPI request failed:', response.status, response.statusText);
         }
+      } catch (error) {
+        console.error('Error fetching from PokeAPI:', error);
       }
     }
+
+    console.log(`Found ${missingPokemon.length} missing Pokemon`);
 
     // Create report data
     const reportData = {
@@ -167,16 +197,24 @@ export async function generateCollectionReport(req: AuthRequest, res: Response):
       totalValue,
       generatedAt: new Date().toISOString()
     };
+    console.log('Report data created:', {
+      existingCardsCount: existingCards.length,
+      missingPokemonCount: missingPokemon.length,
+      totalValue
+    });
 
     // Delete previous report
+    console.log('Deleting previous reports...');
     await db.delete(collectionReports).where(eq(collectionReports.userId, userId));
 
     // Save new report
+    console.log('Saving new report...');
     await db.insert(collectionReports).values({
       userId,
       reportData: JSON.stringify(reportData)
     });
 
+    console.log('Report generated successfully');
     res.json(reportData);
   } catch (error) {
     console.error('Generate collection report error:', error);
