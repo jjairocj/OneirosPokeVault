@@ -21,7 +21,8 @@ export function downloadCSV(filename: string, data: any[], columns: { key: strin
 
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `${filename}.csv`);
+    const fullFilename = filename.toLowerCase().endsWith('.csv') ? filename : `${filename}.csv`;
+    link.setAttribute('download', fullFilename);
     link.style.visibility = 'hidden';
 
     document.body.appendChild(link);
