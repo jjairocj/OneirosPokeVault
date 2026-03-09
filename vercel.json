@@ -1,20 +1,3 @@
 {
-    "version": 2,
-    "buildCommand": "npm run build",
-    "outputDirectory": "client/dist",
-    "functions": {
-        "server/dist/index.js": {
-            "runtime": "nodejs18.x"
-        }
-    },
-    "rewrites": [
-        {
-            "source": "/api/(.*)",
-            "destination": "server/dist/index.js"
-        },
-        {
-            "source": "/(.*)",
-            "destination": "/index.html"
-        }
-    ]
+}
 }
