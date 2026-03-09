@@ -1,16 +1,10 @@
 {
     "version": 2,
     "outputDirectory": "client/dist",
-    "builds": [
-        {
-            "src": "server/src/index.ts",
-            "use": "@vercel/node"
-        }
-    ],
     "rewrites": [
         {
             "source": "/api/(.*)",
-            "destination": "server/src/index.ts"
+            "destination": "/server/dist/index.js"
         },
         {
             "source": "/(.*)",
