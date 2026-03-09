@@ -6,9 +6,9 @@ export interface AuthRequest extends Request {
 }
 
 export function authGuard(req: AuthRequest, res: Response, next: NextFunction): void {
-  const authHeader = req.headers.authorization;
+  const authHeader = req.headers['authorization'];
 
-  if (!authHeader?.startsWith('Bearer ')) {
+  if (!authHeader || typeof authHeader !== 'string' || !authHeader.startsWith('Bearer ')) {
     res.status(401).json({ error: 'Missing or invalid authorization header' });
     return;
   }
