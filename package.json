@@ -12,6 +12,7 @@
     "db:studio": "drizzle-kit studio --config=server/drizzle.config.ts",
     "db:migrate": "drizzle-kit generate --config=server/drizzle.config.ts && drizzle-kit migrate --config=server/drizzle.config.ts",
     "build": "npm run build -w client && npm run build -w server",
+    "start": "node server/dist/index.js",
     "test": "npm run test -w server && npm run test -w client"
   },
   "dependencies": {
