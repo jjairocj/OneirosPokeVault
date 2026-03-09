@@ -173,7 +173,8 @@ export async function generateCollectionReport(req: AuthRequest, res: Response):
           console.log('PokeAPI data received:', data.data?.pokemon_v2_pokemon?.length || 0, 'pokemon');
           for (const pokemon of data.data.pokemon_v2_pokemon || []) {
             const sprites = pokemon.pokemon_v2_pokemonsprites?.[0]?.sprites;
-            const image = sprites ? JSON.parse(sprites).front_default : null;
+            const image = sprites?.front_default || null;
+            console.log(`Pokemon ${pokemon.id} (${pokemon.name}): image = ${image}`);
             missingPokemon.push({
               dexId: pokemon.id,
               name: pokemon.name,
