@@ -151,10 +151,9 @@ export async function refresh(req: Request, res: Response): Promise<void> {
 
     res.cookie('refreshToken', newRefreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: true,
+      sameSite: 'none',
       maxAge: 7 * 24 * 60 * 60 * 1000,
-      path: '/api/auth',
     });
 
     res.json({
@@ -181,7 +180,11 @@ export async function logout(req: Request, res: Response): Promise<void> {
       }
     }
 
-    res.clearCookie('refreshToken', { path: '/api/auth' });
+    res.clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+    });
     res.json({ message: 'Logged out' });
   } catch (error) {
     console.error('Logout error:', error);
