@@ -13,15 +13,6 @@ export function isVariantCardName(name: string): boolean {
   if (/^M\s/i.test(name)) return true; // Mega evolutions in TCGdex
   if (/\sVMAX$/i.test(name)) return true;
   if (/\sVSTAR$/i.test(name)) return true;
-  if (/\sEX$/i.test(name)) return true;
-  if (/\sGX$/i.test(name)) return true;
-  if (/\sV$/i.test(name)) return true;
-  if (/\sex$/i.test(name)) return true;
-  if (/\sBREAK$/i.test(name)) return true;
-  if (/\sStar$/i.test(name)) return true;
-  if (/\sPrime$/i.test(name)) return true;
-  if (/\sLegend$/i.test(name)) return true;
-  if (/\sTERA$/i.test(name)) return true;
   if (/^Radiant\s/i.test(name)) return true;
   if (/^(Hisuian|Galarian|Alolan|Paldean)\s/i.test(name)) return true;
   if (/\s&\s/.test(name)) return true; // TAG TEAM e.g. "Pikachu & Zekrom-GX"
@@ -48,9 +39,17 @@ function CardPickerModal({ initialSearch, slotType, onAssign, onClose }: CardPic
     setSearching(true);
     try {
       const normalizedQ = q.trim().replace(/^Mega\s/i, 'M ');
-      const cards = await tcgdex.card.list(
-        Query.create().like('name', normalizedQ).sort('localId', 'ASC')
+      // Try exact match first if it's the initial search
+      let cards = await tcgdex.card.list(
+        Query.create().like('name', normalizedQ)
       );
+      
+      if (!cards || cards.length === 0) {
+        // Fallback for case sensitivity or partials
+        cards = await tcgdex.card.list(
+          Query.create().like('name', normalizedQ.toLowerCase())
+        );
+      }
       if (!cards) { setResults([]); return; }
 
       const filtered = cards
@@ -171,12 +170,17 @@ function PokemonSlot({ dexId, name, slot, onOpenPicker, onClear, t }: PokemonSlo
             className="w-full h-full object-cover"
             onError={(e) => { (e.target as HTMLImageElement).src = '/card-back.svg'; }}
           />
+        ) : isFilled ? (
+          <div className="w-full h-full flex flex-col items-center justify-center bg-gray-800/60 p-2 text-center">
+            <span className="text-amber-500 text-xl font-bold mb-1">!</span>
+            <span className="text-[8px] text-amber-500/80 leading-tight">Missing info</span>
+          </div>
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gray-800 opacity-40">
             <span className="text-gray-600 text-2xl">?</span>
           </div>
         )}
-        {isFilled && (
+        {isFilled && slot.cardImage && (
           <div className="absolute top-1 right-1 bg-green-500 rounded-full w-4 h-4 flex items-center justify-center text-[8px] text-white font-bold">
             ✓
           </div>
