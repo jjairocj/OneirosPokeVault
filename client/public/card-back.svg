@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 350" fill="none">
+  <rect width="250" height="350" rx="16" fill="#1a1a2e"/>
+  <rect x="8" y="8" width="234" height="334" rx="12" stroke="#4c6ef5" stroke-width="2" stroke-dasharray="6 4" fill="none"/>
+  <circle cx="125" cy="145" r="50" stroke="#4c6ef5" stroke-width="2.5" fill="#4c6ef520"/>
+  <text x="125" y="152" text-anchor="middle" font-family="sans-serif" font-size="40" fill="#4c6ef5">?</text>
+  <text x="125" y="230" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="600" fill="#6b7280">Image not</text>
+  <text x="125" y="250" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="600" fill="#6b7280">available</text>
+  <text x="125" y="310" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#4b5563">Oneiros PokeVault</text>
+</svg>

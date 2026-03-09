@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <!-- Background circle with dream/nebula glow -->
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="45%" r="50%">
+      <stop offset="0%" stop-color="#7c3aed" stop-opacity="0.4"/>
+      <stop offset="60%" stop-color="#4c1d95" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#0f0a1a" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="pokeball-top" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#a855f7"/>
+      <stop offset="100%" stop-color="#7c3aed"/>
+    </linearGradient>
+    <linearGradient id="pokeball-bottom" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1e1b4b"/>
+      <stop offset="100%" stop-color="#0f0a1a"/>
+    </linearGradient>
+    <linearGradient id="vault-door" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#c4b5fd"/>
+      <stop offset="100%" stop-color="#8b5cf6"/>
+    </linearGradient>
+    <filter id="star-glow">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="outer-glow">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Nebula background glow -->
+  <circle cx="256" cy="256" r="250" fill="url(#glow)"/>
+
+  <!-- Outer ring — vault border -->
+  <circle cx="256" cy="256" r="210" stroke="#7c3aed" stroke-width="6" fill="none" filter="url(#outer-glow)" opacity="0.6"/>
+  <circle cx="256" cy="256" r="200" stroke="#4c1d95" stroke-width="2" fill="none"/>
+
+  <!-- Pokeball shape -->
+  <!-- Top half (purple) -->
+  <path d="M56 256 A200 200 0 0 1 456 256 Z" fill="url(#pokeball-top)"/>
+  <!-- Bottom half (dark) -->
+  <path d="M56 256 A200 200 0 0 0 456 256 Z" fill="url(#pokeball-bottom)"/>
+
+  <!-- Center band -->
+  <rect x="56" y="248" width="400" height="16" fill="#1e1b4b"/>
+  <rect x="56" y="250" width="400" height="12" fill="#2e1065"/>
+
+  <!-- Vault lock circle (center of pokeball) -->
+  <circle cx="256" cy="256" r="60" fill="#1e1b4b" stroke="#8b5cf6" stroke-width="4"/>
+  <circle cx="256" cy="256" r="45" fill="none" stroke="#6d28d9" stroke-width="2"/>
+
+  <!-- Vault door handle — keyhole shape -->
+  <circle cx="256" cy="244" r="12" fill="url(#vault-door)"/>
+  <rect x="250" y="244" width="12" height="24" rx="3" fill="url(#vault-door)"/>
+
+  <!-- Dream sparkles / stars around the pokeball -->
+  <circle cx="130" cy="140" r="3" fill="#e9d5ff" filter="url(#star-glow)"/>
+  <circle cx="380" cy="120" r="2.5" fill="#c4b5fd" filter="url(#star-glow)"/>
+  <circle cx="400" cy="180" r="2" fill="#ddd6fe" filter="url(#star-glow)"/>
+  <circle cx="100" cy="200" r="2" fill="#ddd6fe" filter="url(#star-glow)"/>
+  <circle cx="160" cy="100" r="1.5" fill="#e9d5ff" filter="url(#star-glow)"/>
+  <circle cx="350" cy="90" r="1.8" fill="#c4b5fd" filter="url(#star-glow)"/>
+  <circle cx="420" cy="260" r="2" fill="#e9d5ff" filter="url(#star-glow)"/>
+  <circle cx="85" cy="280" r="2.2" fill="#ddd6fe" filter="url(#star-glow)"/>
+  <circle cx="140" cy="380" r="2" fill="#c4b5fd" filter="url(#star-glow)"/>
+  <circle cx="370" cy="390" r="2.5" fill="#e9d5ff" filter="url(#star-glow)"/>
+  <circle cx="410" cy="340" r="1.5" fill="#ddd6fe" filter="url(#star-glow)"/>
+  <circle cx="110" cy="340" r="1.8" fill="#e9d5ff" filter="url(#star-glow)"/>
+
+  <!-- Crescent moon accent (Oneiros = dream) -->
+  <g transform="translate(340, 100)" filter="url(#star-glow)">
+    <path d="M0 0 A20 20 0 1 1 0 40 A14 14 0 1 0 0 0 Z" fill="#c4b5fd" opacity="0.7"/>
+  </g>
+
+  <!-- Text: "O" monogram at bottom -->
+  <text x="256" y="440" text-anchor="middle" font-family="Georgia, serif" font-size="42" font-weight="bold" fill="#c4b5fd" letter-spacing="2" opacity="0.9">ONEIROS</text>
+  <text x="256" y="470" text-anchor="middle" font-family="sans-serif" font-size="16" fill="#7c3aed" letter-spacing="6" opacity="0.7">POKEVAULT</text>
+</svg>
