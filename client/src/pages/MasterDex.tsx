@@ -32,10 +32,29 @@ interface CardPickerProps {
 
 function CardPickerModal({ initialSearch, slotType, onAssign, onClose }: CardPickerProps) {
   const { t } = useLanguage();
+  const { entries: pokemonEntries } = usePokemonDex();
   const [query, setQuery] = useState(initialSearch);
   const [results, setResults] = useState<{ id: string; name: string; image: string }[]>([]);
   const [searching, setSearching] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Helper to get clean Pokemon name
+  const getCleanPokemonName = useCallback((card: any) => {
+    if (slotType === 'base' && card.dexId && Array.isArray(card.dexId) && card.dexId.length > 0) {
+      // For base cards, use the clean name from pokemonDex
+      const dexId = card.dexId[0];
+      const pokemonEntry = pokemonEntries.find((p: { dexId: number; name: string }) => p.dexId === dexId);
+      if (pokemonEntry) {
+        return pokemonEntry.name;
+      }
+    }
+    // For variants or fallback, clean the TCGdex name
+    return card.name
+      .replace(/^Galarian\s+/i, '') // Remove Galarian prefix
+      .replace(/^Hisuian\s+/i, '') // Remove Hisuian prefix
+      .replace(/^Alolan\s+/i, '') // Remove Alolan prefix
+      .replace(/^Paldean\s+/i, ''); // Remove Paldean prefix
+  }, [slotType, pokemonEntries]);
 
   const search = useCallback(async (q: string) => {
     if (!q.trim()) { setResults([]); return; }
@@ -46,7 +65,7 @@ function CardPickerModal({ initialSearch, slotType, onAssign, onClose }: CardPic
       let cards = await tcgdex.card.list(
         Query.create().like('name', normalizedQ)
       );
-      
+
       if (!cards || cards.length === 0) {
         // Fallback for case sensitivity or partials
         cards = await tcgdex.card.list(
@@ -60,7 +79,7 @@ function CardPickerModal({ initialSearch, slotType, onAssign, onClose }: CardPic
         .filter((c) => slotType === 'variant' ? isVariantCardName(c.name) : !isVariantCardName(c.name))
         .map((c) => ({
           id: c.id,
-          name: c.name,
+          name: getCleanPokemonName(c),
           image: c.image ? c.getImageURL('low', 'webp') : '/card-back.svg',
         }));
 
@@ -70,7 +89,7 @@ function CardPickerModal({ initialSearch, slotType, onAssign, onClose }: CardPic
     } finally {
       setSearching(false);
     }
-  }, [slotType]);
+  }, [slotType, getCleanPokemonName]);
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -79,7 +98,11 @@ function CardPickerModal({ initialSearch, slotType, onAssign, onClose }: CardPic
   }, [query, search]);
 
   // Trigger initial search
-  useEffect(() => { search(initialSearch); }, []); // eslint-disable-line
+  useEffect(() => {
+    if (pokemonEntries.length > 0) {
+      search(initialSearch);
+    }
+  }, [pokemonEntries.length, initialSearch, search]); // eslint-disable-line
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4" onClick={onClose}>
@@ -161,11 +184,10 @@ function PokemonSlot({ dexId, name, slot, onOpenPicker, onClear, onShowDetails, 
       <button
         type="button"
         onClick={() => isFilled ? onShowDetails(slot.cardId) : onOpenPicker(dexId, name)}
-        className={`relative w-full aspect-[2.5/3.5] rounded-lg overflow-hidden border-2 transition-all ${
-          isFilled
+        className={`relative w-full aspect-[2.5/3.5] rounded-lg overflow-hidden border-2 transition-all ${isFilled
             ? 'border-vault-500 shadow-md shadow-vault-500/20'
             : 'border-gray-700 hover:border-gray-500'
-        }`}
+          }`}
       >
         {isFilled && slot.cardImage ? (
           <img
@@ -299,9 +321,9 @@ export default function MasterDex() {
   const q = dexSearch.trim().toLowerCase();
   const filteredIds = q
     ? sortedIds.filter((id) => {
-        const name = getPokemonName(id) ?? '';
-        return name.toLowerCase().includes(q) || String(id).includes(q);
-      })
+      const name = getPokemonName(id) ?? '';
+      return name.toLowerCase().includes(q) || String(id).includes(q);
+    })
     : sortedIds;
 
   const isSearching = q.length > 0;
@@ -423,11 +445,10 @@ export default function MasterDex() {
           <button
             type="button"
             onClick={() => setActiveTab('base')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              activeTab === 'base'
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'base'
                 ? 'bg-vault-600 text-white'
                 : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-            }`}
+              }`}
           >
             🔵 {t('masterdex.tabBase')}
             <span className="ml-2 text-xs opacity-70">{baseCount}/{ALL_DEX_IDS.length}</span>
@@ -435,11 +456,10 @@ export default function MasterDex() {
           <button
             type="button"
             onClick={() => setActiveTab('variants')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              activeTab === 'variants'
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'variants'
                 ? 'bg-amber-600 text-white'
                 : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-            }`}
+              }`}
           >
             ⭐ {t('masterdex.tabVariants')}
             <span className="ml-2 text-xs opacity-70">{variantCount}</span>
@@ -461,18 +481,16 @@ export default function MasterDex() {
                 <button
                   type="button"
                   onClick={() => handleSortChange('dex')}
-                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                    sortOrder === 'dex' ? 'bg-vault-600 text-white' : 'text-gray-400 hover:text-white'
-                  }`}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${sortOrder === 'dex' ? 'bg-vault-600 text-white' : 'text-gray-400 hover:text-white'
+                    }`}
                 >
                   # {t('masterdex.sortDex')}
                 </button>
                 <button
                   type="button"
                   onClick={() => handleSortChange('alpha')}
-                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                    sortOrder === 'alpha' ? 'bg-vault-600 text-white' : 'text-gray-400 hover:text-white'
-                  }`}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${sortOrder === 'alpha' ? 'bg-vault-600 text-white' : 'text-gray-400 hover:text-white'
+                    }`}
                 >
                   A–Z {t('masterdex.sortAlpha')}
                 </button>
@@ -549,9 +567,8 @@ export default function MasterDex() {
                       key={p}
                       type="button"
                       onClick={() => { setPage(p); window.scrollTo(0, 0); }}
-                      className={`w-8 h-8 rounded-lg text-xs font-medium transition-colors ${
-                        p === page ? 'bg-vault-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-                      }`}
+                      className={`w-8 h-8 rounded-lg text-xs font-medium transition-colors ${p === page ? 'bg-vault-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                        }`}
                     >
                       {p}
                     </button>
