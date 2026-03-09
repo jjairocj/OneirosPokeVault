@@ -20,6 +20,7 @@ interface FullCard {
   types?: string[];
   stage?: string;
   suffix?: string;
+  evolveFrom?: string;
   set?: {
     id: string;
     name: string;
@@ -33,6 +34,10 @@ interface FullCard {
     firstEdition?: boolean;
     wPromo?: boolean;
   };
+  variants_detailed?: Array<{
+    type: string;
+    size?: string;
+  }>;
   abilities?: Array<{
     name: string;
     effect: string;
@@ -49,7 +54,33 @@ interface FullCard {
   retreat?: number;
   legal?: { standard?: boolean; expanded?: boolean };
   dexId?: number[];
-  pricing?: Record<string, any>;
+  pricing?: {
+    cardmarket?: {
+      avg?: number;
+      avg1?: number;
+      avg7?: number;
+      avg30?: number;
+      'avg-holo'?: number;
+      unit?: string;
+      updated?: string;
+    };
+    tcgplayer?: {
+      normal?: {
+        lowPrice?: number;
+        midPrice?: number;
+        highPrice?: number;
+        marketPrice?: number;
+      };
+      'reverse-holofoil'?: {
+        lowPrice?: number;
+        midPrice?: number;
+        highPrice?: number;
+        marketPrice?: number;
+      };
+      unit?: string;
+      updated?: string;
+    };
+  };
 }
 
 const CARD_LANGUAGES = [
@@ -84,8 +115,11 @@ export default function CardDetailModal({ cardId, onClose }: CardDetailModalProp
         } else {
           setCard(result as unknown as FullCard);
         }
-      } catch {
-        if (!cancelled) setError('Failed to load card');
+      } catch (err: any) {
+        if (!cancelled) {
+          console.error('Failed to load card:', err);
+          setError(`Failed to load card: ${err?.message || 'Unknown error'}`);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -352,6 +386,103 @@ export default function CardDetailModal({ cardId, onClose }: CardDetailModalProp
                     }`}>
                     {t('detail.expanded')}: {card.legal.expanded ? t('detail.legal.yes') : t('detail.legal.no')}
                   </span>
+                </div>
+              </div>
+            )}
+
+            {/* Pricing */}
+            {card.pricing && (card.pricing.cardmarket || card.pricing.tcgplayer) && (
+              <div>
+                <h4 className="text-sm font-semibold text-gray-400 mb-2">{t('detail.pricing')}</h4>
+                <div className="space-y-3">
+                  {card.pricing.cardmarket && (
+                    <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-800">
+                      <div className="text-xs font-medium text-gray-300 mb-2">CardMarket (EUR)</div>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        {card.pricing.cardmarket.avg != null && (
+                          <div>
+                            <span className="text-gray-500">Avg</span>
+                            <p className="text-gray-200">€{card.pricing.cardmarket.avg.toFixed(2)}</p>
+                          </div>
+                        )}
+                        {card.pricing.cardmarket['avg-holo'] != null && (
+                          <div>
+                            <span className="text-gray-500">Avg Holo</span>
+                            <p className="text-gray-200">€{card.pricing.cardmarket['avg-holo'].toFixed(2)}</p>
+                          </div>
+                        )}
+                        {card.pricing.cardmarket.avg30 != null && (
+                          <div>
+                            <span className="text-gray-500">30d Avg</span>
+                            <p className="text-gray-200">€{card.pricing.cardmarket.avg30.toFixed(2)}</p>
+                          </div>
+                        )}
+                        {card.pricing.cardmarket.trend != null && (
+                          <div>
+                            <span className="text-gray-500">Trend</span>
+                            <p className="text-gray-200">€{(card.pricing.cardmarket as any).trend?.toFixed(2)}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  {card.pricing.tcgplayer && (
+                    <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-800">
+                      <div className="text-xs font-medium text-gray-300 mb-2">TCGPlayer (USD)</div>
+                      <div className="space-y-2">
+                        {card.pricing.tcgplayer.normal && (
+                          <div>
+                            <span className="text-gray-500 text-xs">Normal</span>
+                            <div className="grid grid-cols-3 gap-2 text-xs mt-1">
+                              {card.pricing.tcgplayer.normal.lowPrice != null && (
+                                <div>
+                                  <span className="text-gray-600">Low</span>
+                                  <p className="text-gray-200">${card.pricing.tcgplayer.normal.lowPrice.toFixed(2)}</p>
+                                </div>
+                              )}
+                              {card.pricing.tcgplayer.normal.midPrice != null && (
+                                <div>
+                                  <span className="text-gray-600">Mid</span>
+                                  <p className="text-gray-200">${card.pricing.tcgplayer.normal.midPrice.toFixed(2)}</p>
+                                </div>
+                              )}
+                              {card.pricing.tcgplayer.normal.highPrice != null && (
+                                <div>
+                                  <span className="text-gray-600">High</span>
+                                  <p className="text-gray-200">${card.pricing.tcgplayer.normal.highPrice.toFixed(2)}</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        {card.pricing.tcgplayer['reverse-holofoil'] && (
+                          <div>
+                            <span className="text-gray-500 text-xs">Reverse Holo</span>
+                            <div className="grid grid-cols-3 gap-2 text-xs mt-1">
+                              {card.pricing.tcgplayer['reverse-holofoil'].lowPrice != null && (
+                                <div>
+                                  <span className="text-gray-600">Low</span>
+                                  <p className="text-gray-200">${card.pricing.tcgplayer['reverse-holofoil'].lowPrice.toFixed(2)}</p>
+                                </div>
+                              )}
+                              {card.pricing.tcgplayer['reverse-holofoil'].midPrice != null && (
+                                <div>
+                                  <span className="text-gray-600">Mid</span>
+                                  <p className="text-gray-200">${card.pricing.tcgplayer['reverse-holofoil'].midPrice.toFixed(2)}</p>
+                                </div>
+                              )}
+                              {card.pricing.tcgplayer['reverse-holofoil'].highPrice != null && (
+                                <div>
+                                  <span className="text-gray-600">High</span>
+                                  <p className="text-gray-200">${card.pricing.tcgplayer['reverse-holofoil'].highPrice.toFixed(2)}</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
