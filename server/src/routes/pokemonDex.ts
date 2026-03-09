@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { authGuard } from '../middleware/authGuard';
-import { adminGuard } from '../middleware/adminGuard';
-import { getAllPokemon, addPokemon, updatePokemon } from '../controllers/pokemonDex';
+import { authGuard } from '../middleware/authGuard.js';
+import { adminGuard } from '../middleware/adminGuard.js';
+import { getAllPokemon, addPokemon, updatePokemon } from '../controllers/pokemonDex.js';
 
 const router = Router();
 

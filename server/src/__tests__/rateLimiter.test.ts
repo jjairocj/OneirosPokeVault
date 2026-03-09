@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { authLimiter, apiLimiter, collectionsLimiter } from '../middleware/rateLimiter';
+import { authLimiter, apiLimiter, collectionsLimiter } from '../middleware/rateLimiter.js';
 
 describe('rateLimiter', () => {
   it('authLimiter should be defined with correct config', () => {

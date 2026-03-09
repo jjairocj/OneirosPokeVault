@@ -2,8 +2,8 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
-import { db } from '../db';
-import { users, refreshTokens } from '../db/schema';
+import { db } from '../db/index.js';
+import { users, refreshTokens } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 
 const SALT_ROUNDS = 10;

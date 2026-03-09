@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { getOwnedCards, addOwnedCard, removeOwnedCard } from '../controllers/ownedCards';
-import { authGuard } from '../middleware/authGuard';
-import { apiLimiter } from '../middleware/rateLimiter';
+import { getOwnedCards, addOwnedCard, removeOwnedCard } from '../controllers/ownedCards.js';
+import { authGuard } from '../middleware/authGuard.js';
+import { apiLimiter } from '../middleware/rateLimiter.js';
 
 const router = Router();
 

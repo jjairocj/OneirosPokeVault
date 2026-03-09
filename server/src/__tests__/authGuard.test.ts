@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { authGuard, AuthRequest } from '../middleware/authGuard';
+import { authGuard, AuthRequest } from '../middleware/authGuard.js';
 import jwt from 'jsonwebtoken';
 import { Response, NextFunction } from 'express';
 

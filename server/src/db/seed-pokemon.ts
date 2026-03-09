@@ -5,8 +5,8 @@
  * Names sourced from PokeAPI (https://pokeapi.co/api/v2/pokemon?limit=1025)
  * with display-name overrides for special characters and formatting.
  */
-import { db } from './index';
-import { pokemonDex } from './schema';
+import { db } from './index.js';
+import { pokemonDex } from './schema.js';
 
 // Manual overrides for names that need special characters or casing
 const OVERRIDES: Record<number, string> = {

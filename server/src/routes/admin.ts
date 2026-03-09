@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { authGuard } from '../middleware/authGuard';
-import { adminGuard } from '../middleware/adminGuard';
-import { listUsers, updateUserPlan } from '../controllers/admin';
+import { authGuard } from '../middleware/authGuard.js';
+import { adminGuard } from '../middleware/adminGuard.js';
+import { listUsers, updateUserPlan } from '../controllers/admin.js';
 
 const router = Router();
 

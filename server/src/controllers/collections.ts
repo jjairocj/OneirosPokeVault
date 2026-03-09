@@ -1,8 +1,8 @@
 import { Response } from 'express';
-import { db } from '../db';
-import { collections, users } from '../db/schema';
+import { db } from '../db/index.js';
+import { collections, users } from '../db/schema.js';
 import { eq, and } from 'drizzle-orm';
-import { AuthRequest } from '../middleware/authGuard';
+import { AuthRequest } from '../middleware/authGuard.js';
 
 const FREE_LIMIT = 5;
 

@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { authGuard } from '../middleware/authGuard';
-import { proGuard } from '../middleware/proGuard';
-import { getSlots, assignSlot, unassignSlot } from '../controllers/masterdex';
+import { authGuard } from '../middleware/authGuard.js';
+import { proGuard } from '../middleware/proGuard.js';
+import { getSlots, assignSlot, unassignSlot } from '../controllers/masterdex.js';
 
 const router = Router();
 

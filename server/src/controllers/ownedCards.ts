@@ -1,8 +1,8 @@
 import { Response } from 'express';
-import { db } from '../db';
-import { ownedCards } from '../db/schema';
+import { db } from '../db/index.js';
+import { ownedCards } from '../db/schema.js';
 import { eq, and } from 'drizzle-orm';
-import { AuthRequest } from '../middleware/authGuard';
+import { AuthRequest } from '../middleware/authGuard.js';
 
 export async function getOwnedCards(req: AuthRequest, res: Response): Promise<void> {
   try {

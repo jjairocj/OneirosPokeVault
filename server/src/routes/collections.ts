@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { getCollections, createCollection, deleteCollection } from '../controllers/collections';
-import { authGuard } from '../middleware/authGuard';
-import { collectionsLimiter } from '../middleware/rateLimiter';
+import { getCollections, createCollection, deleteCollection } from '../controllers/collections.js';
+import { authGuard } from '../middleware/authGuard.js';
+import { collectionsLimiter } from '../middleware/rateLimiter.js';
 
 const router = Router();
 

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Response } from 'express';
-import { AuthRequest } from '../middleware/authGuard';
+import { AuthRequest } from '../middleware/authGuard.js';
 
 // Mock the database
 vi.mock('../db', () => ({
@@ -18,9 +18,9 @@ vi.mock('../db', () => ({
   },
 }));
 
-import { db } from '../db';
-import { getOwnedCards, addOwnedCard, removeOwnedCard } from '../controllers/ownedCards';
-import { getCollections, createCollection } from '../controllers/collections';
+import { db } from '../db/index.js';
+import { getOwnedCards, addOwnedCard, removeOwnedCard } from '../controllers/ownedCards.js';
+import { getCollections, createCollection } from '../controllers/collections.js';
 
 function mockReq(overrides: Partial<AuthRequest> = {}): AuthRequest {
   return {

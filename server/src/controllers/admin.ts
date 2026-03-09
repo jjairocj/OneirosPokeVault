@@ -1,8 +1,8 @@
 import { Response } from 'express';
-import { db } from '../db';
-import { users } from '../db/schema';
+import { db } from '../db/index.js';
+import { users } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
-import { AuthRequest } from '../middleware/authGuard';
+import { AuthRequest } from '../middleware/authGuard.js';
 
 export async function listUsers(_req: AuthRequest, res: Response): Promise<void> {
   try {

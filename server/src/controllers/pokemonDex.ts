@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
-import { db } from '../db';
-import { pokemonDex } from '../db/schema';
+import { db } from '../db/index.js';
+import { pokemonDex } from '../db/schema.js';
 import { eq, asc } from 'drizzle-orm';
-import { AuthRequest } from '../middleware/authGuard';
+import { AuthRequest } from '../middleware/authGuard.js';
 
 export async function getAllPokemon(_req: Request, res: Response): Promise<void> {
   const rows = await db.select().from(pokemonDex).orderBy(asc(pokemonDex.dexId));

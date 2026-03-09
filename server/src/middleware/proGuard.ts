@@ -1,8 +1,8 @@
 import { Response, NextFunction } from 'express';
-import { db } from '../db';
-import { users } from '../db/schema';
+import { db } from '../db/index.js';
+import { users } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
-import { AuthRequest } from './authGuard';
+import { AuthRequest } from './authGuard.js';
 
 export async function proGuard(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
   if (!req.userId) {

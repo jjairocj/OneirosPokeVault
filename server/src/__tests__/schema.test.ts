@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { getTableConfig } from 'drizzle-orm/pg-core';
-import { users, refreshTokens, collections, ownedCards } from '../db/schema';
+import { users, refreshTokens, collections, ownedCards } from '../db/schema.js';
 
 describe('Database Schema', () => {
   describe('users table', () => {
