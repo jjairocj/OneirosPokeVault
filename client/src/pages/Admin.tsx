@@ -34,7 +34,7 @@ function PokemonDexManager() {
     apiFetch('/api/pokemon-dex')
       .then((r) => r.json())
       .then((data) => setEntries(data))
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false));
   }, []);
 
@@ -304,22 +304,20 @@ function CollectionReportManager() {
             <button
               type="button"
               onClick={() => setActiveTab('existing')}
-              className={`px-4 py-2 font-medium text-sm transition-colors ${
-                activeTab === 'existing'
+              className={`px-4 py-2 font-medium text-sm transition-colors ${activeTab === 'existing'
                   ? 'text-vault-400 border-b-2 border-vault-400'
                   : 'text-gray-400 hover:text-gray-300'
-              }`}
+                }`}
             >
               Existing Cards ({report.existingCards?.length || 0})
             </button>
             <button
               type="button"
               onClick={() => setActiveTab('missing')}
-              className={`px-4 py-2 font-medium text-sm transition-colors ${
-                activeTab === 'missing'
+              className={`px-4 py-2 font-medium text-sm transition-colors ${activeTab === 'missing'
                   ? 'text-vault-400 border-b-2 border-vault-400'
                   : 'text-gray-400 hover:text-gray-300'
-              }`}
+                }`}
             >
               Missing Pokémon ({report.missingPokemon?.length || 0})
             </button>
@@ -491,20 +489,18 @@ export default function Admin() {
                     <td className="px-4 py-3 text-gray-400">{u.id}</td>
                     <td className="px-4 py-3 text-gray-200">{u.email}</td>
                     <td className="px-4 py-3">
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                        u.plan === 'pro'
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${u.plan === 'pro'
                           ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
                           : 'bg-gray-700 text-gray-300'
-                      }`}>
+                        }`}>
                         {u.plan.toUpperCase()}
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                        u.role === 'admin'
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${u.role === 'admin'
                           ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
                           : 'text-gray-500'
-                      }`}>
+                        }`}>
                         {u.role}
                       </span>
                     </td>
@@ -516,11 +512,10 @@ export default function Admin() {
                         type="button"
                         disabled={updating === u.id}
                         onClick={() => togglePlan(u.id, u.plan)}
-                        className={`text-xs px-3 py-1 rounded-md font-medium transition-colors ${
-                          u.plan === 'pro'
+                        className={`text-xs px-3 py-1 rounded-md font-medium transition-colors ${u.plan === 'pro'
                             ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30'
                             : 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 border border-amber-500/30'
-                        } disabled:opacity-50`}
+                          } disabled:opacity-50`}
                       >
                         {updating === u.id
                           ? '...'
@@ -542,11 +537,10 @@ export default function Admin() {
                 <div className="flex items-center justify-between">
                   <span className="text-gray-200 font-medium text-sm truncate max-w-[60%]">{u.email}</span>
                   <div className="flex items-center gap-2">
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                      u.plan === 'pro'
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${u.plan === 'pro'
                         ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
                         : 'bg-gray-700 text-gray-300'
-                    }`}>
+                      }`}>
                       {u.plan.toUpperCase()}
                     </span>
                     {u.role === 'admin' && (
@@ -564,11 +558,10 @@ export default function Admin() {
                     type="button"
                     disabled={updating === u.id}
                     onClick={() => togglePlan(u.id, u.plan)}
-                    className={`text-xs px-3 py-1.5 rounded-md font-medium transition-colors ${
-                      u.plan === 'pro'
+                    className={`text-xs px-3 py-1.5 rounded-md font-medium transition-colors ${u.plan === 'pro'
                         ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30'
                         : 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 border border-amber-500/30'
-                    } disabled:opacity-50`}
+                      } disabled:opacity-50`}
                   >
                     {updating === u.id
                       ? '...'
