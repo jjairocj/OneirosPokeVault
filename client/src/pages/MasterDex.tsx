@@ -10,8 +10,18 @@ import { Query } from '@tcgdex/sdk';
 // --- Variant detection ---
 export function isVariantCardName(name: string): boolean {
   if (/^Mega\s/i.test(name)) return true;
+  if (/^M\s/i.test(name)) return true; // Mega evolutions in TCGdex
   if (/\sVMAX$/i.test(name)) return true;
   if (/\sVSTAR$/i.test(name)) return true;
+  if (/\sEX$/i.test(name)) return true;
+  if (/\sGX$/i.test(name)) return true;
+  if (/\sV$/i.test(name)) return true;
+  if (/\sex$/i.test(name)) return true;
+  if (/\sBREAK$/i.test(name)) return true;
+  if (/\sStar$/i.test(name)) return true;
+  if (/\sPrime$/i.test(name)) return true;
+  if (/\sLegend$/i.test(name)) return true;
+  if (/\sTERA$/i.test(name)) return true;
   if (/^Radiant\s/i.test(name)) return true;
   if (/^(Hisuian|Galarian|Alolan|Paldean)\s/i.test(name)) return true;
   if (/\s&\s/.test(name)) return true; // TAG TEAM e.g. "Pikachu & Zekrom-GX"
@@ -37,12 +47,14 @@ function CardPickerModal({ initialSearch, slotType, onAssign, onClose }: CardPic
     if (!q.trim()) { setResults([]); return; }
     setSearching(true);
     try {
+      const normalizedQ = q.trim().replace(/^Mega\s/i, 'M ');
       const cards = await tcgdex.card.list(
-        Query.create().like('name', q.trim()).sort('localId', 'ASC')
+        Query.create().like('name', normalizedQ).sort('localId', 'ASC')
       );
       if (!cards) { setResults([]); return; }
 
       const filtered = cards
+        .filter((c) => !c.image?.includes('/tcgp/')) // Exclude TCG Pocket
         .filter((c) => slotType === 'variant' ? isVariantCardName(c.name) : !isVariantCardName(c.name))
         .map((c) => ({
           id: c.id,

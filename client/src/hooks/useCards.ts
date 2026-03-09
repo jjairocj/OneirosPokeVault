@@ -37,9 +37,10 @@ export function useCards() {
     setError(null);
 
     try {
+      const normalizedQ = name.trim().replace(/^Mega\s/i, 'M ');
       const results = await tcgdex.card.list(
         Query.create()
-          .like('name', name.trim())
+          .like('name', normalizedQ)
           .sort('localId', 'ASC')
       );
 

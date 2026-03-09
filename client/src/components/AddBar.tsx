@@ -55,18 +55,21 @@ export default function AddBar({ onAdd, disabled }: AddBarProps) {
       return;
     }
     try {
+      const normalizedQ = query.trim().replace(/^Mega\s/i, 'M ');
       const results = await tcgdex.card.list(
-        Query.create().like('name', query).paginate(1, 50)
+        Query.create().like('name', normalizedQ).paginate(1, 100)
       );
       if (!results) {
         setSuggestions([]);
         return;
       }
       const names = new Set<string>();
-      results.forEach((c) => names.add(c.name));
+      results
+        .filter((c) => !c.image?.includes('/tcgp/')) // Exclude TCG Pocket
+        .forEach((c) => names.add(c.name));
       setSuggestions(
         Array.from(names)
-          .filter((n) => n.toLowerCase().includes(query.toLowerCase()))
+          .filter((n) => n.toLowerCase().includes(normalizedQ.toLowerCase()) || n.toLowerCase().includes(query.trim().toLowerCase()))
           .sort()
           .slice(0, 8)
           .map((n) => ({ label: n, value: n }))
