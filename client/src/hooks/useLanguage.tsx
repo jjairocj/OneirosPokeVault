@@ -85,7 +85,6 @@ const translations = {
     'detail.legal.no': 'Not legal',
     'detail.cardLang': 'Card language',
     'detail.close': 'Close',
-    'detail.pricing': 'Pricing',
     'detail.dexId': 'Pokedex',
     // Variants filter
     'variant.normal': 'Normal',
@@ -233,7 +232,6 @@ const translations = {
     'detail.legal.no': 'No legal',
     'detail.cardLang': 'Idioma de la carta',
     'detail.close': 'Cerrar',
-    'detail.pricing': 'Precios',
     'detail.dexId': 'Pokedex',
     'variant.normal': 'Normal',
     'variant.holo': 'Holo',

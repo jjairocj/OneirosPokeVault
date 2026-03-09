@@ -1,6 +1,6 @@
 import { Response } from 'express';
 import { db } from '../db/index.js';
-import { users, pokemonDex, ownedCards, collectionReports } from '../db/schema.js';
+import { users, pokemonDex, ownedCards, collectionReports, masterdexSlots } from '../db/schema.js';
 import { eq, desc } from 'drizzle-orm';
 import { AuthRequest } from '../middleware/authGuard.js';
 import TCGdex from '@tcgdex/sdk';
@@ -55,7 +55,7 @@ export async function updateUserPlan(req: AuthRequest, res: Response): Promise<v
 
 export async function generateCollectionReport(req: AuthRequest, res: Response): Promise<void> {
   try {
-    const userId = req.user!.id;
+    const userId = req.userId!;
 
     // Get all masterdex slots for user
     const masterdexCards = await db
@@ -79,15 +79,15 @@ export async function generateCollectionReport(req: AuthRequest, res: Response):
     let totalValue = 0;
 
     for (const slot of masterdexCards) {
-      if (ownedCardIds.has(slot.cardId)) {
+      if (slot.cardId && ownedCardIds.has(slot.cardId)) {
         try {
           const cardData = await sdk.card.get(slot.cardId);
           if (cardData) {
-            const price = cardData.pricing?.cardmarket?.avg || cardData.pricing?.tcgplayer?.normal?.midPrice || 0;
+            const price = (cardData as any).pricing?.cardmarket?.avg || (cardData as any).pricing?.tcgplayer?.normal?.midPrice || 0;
             existingCards.push({
               cardId: slot.cardId,
               name: slot.cardName || cardData.name,
-              image: slot.cardImage || cardData.image,
+              image: slot.cardImage || (cardData as any).image,
               price: price,
               slotType: slot.slotType,
               slotKey: slot.slotKey
@@ -106,7 +106,7 @@ export async function generateCollectionReport(req: AuthRequest, res: Response):
     // Find missing cards - get dexIds from masterdex that don't have owned cards
     const ownedDexIds = new Set(
       masterdexCards
-        .filter(slot => ownedCardIds.has(slot.cardId))
+        .filter(slot => slot.cardId && ownedCardIds.has(slot.cardId))
         .map(slot => parseInt(slot.slotKey))
         .filter(id => !isNaN(id))
     );
@@ -186,7 +186,7 @@ export async function generateCollectionReport(req: AuthRequest, res: Response):
 
 export async function getCollectionReport(req: AuthRequest, res: Response): Promise<void> {
   try {
-    const userId = req.user!.id;
+    const userId = req.userId!;
 
     const reports = await db
       .select()

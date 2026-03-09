@@ -424,12 +424,6 @@ export default function CardDetailModal({ cardId, onClose }: CardDetailModalProp
                             <p className="text-gray-200">€{card.pricing.cardmarket.avg30.toFixed(2)}</p>
                           </div>
                         )}
-                        {card.pricing.cardmarket.trend != null && (
-                          <div>
-                            <span className="text-gray-500">Trend</span>
-                            <p className="text-gray-200">€{(card.pricing.cardmarket as any).trend?.toFixed(2)}</p>
-                          </div>
-                        )}
                       </div>
                     </div>
                   )}
