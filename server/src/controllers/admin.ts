@@ -160,8 +160,7 @@ export async function generateCollectionReport(req: AuthRequest, res: Response):
           missingPokemon.push({
             dexId: pokemon.dexId,
             name: pokemon.name,
-            image: sprite,
-            type: pokemon.type
+            image: sprite
           });
         } catch (error) {
           console.error(`Error fetching PokeAPI data for dexId ${pokemon.dexId}:`, error);
@@ -169,8 +168,7 @@ export async function generateCollectionReport(req: AuthRequest, res: Response):
           missingPokemon.push({
             dexId: pokemon.dexId,
             name: pokemon.name,
-            image: null,
-            type: pokemon.type
+            image: null
           });
         }
       }
