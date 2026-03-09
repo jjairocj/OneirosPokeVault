@@ -62,7 +62,19 @@ export function useCards() {
 
       setCards(mapped);
     } catch (err: any) {
-      setError(err.message || 'Failed to fetch cards');
+      // Handle localStorage quota exceeded errors
+      if (err?.message?.includes('exceeded the quota') || err?.message?.includes('QuotaExceededError')) {
+        console.warn('localStorage quota exceeded, clearing cache...');
+        try {
+          const keys = Object.keys(localStorage).filter(k => k.includes('@tcgdex-cache'));
+          keys.forEach(k => localStorage.removeItem(k));
+          setError('Cache cleared. Please try again.');
+        } catch (e) {
+          setError('Storage error. Please clear your browser cache and try again.');
+        }
+      } else {
+        setError(err.message || 'Failed to fetch cards');
+      }
       setCards([]);
     } finally {
       setLoading(false);
