@@ -109,6 +109,7 @@ export default function CardDetailModal({ cardId, onClose }: CardDetailModalProp
         const sdk = new TCGdex(cardLang as any);
         const result = await sdk.card.get(cardId);
         if (cancelled) return;
+        console.log('fetched card', result);
         if (!result) {
           setError('Card not found');
           setCard(null);
@@ -189,9 +190,15 @@ export default function CardDetailModal({ cardId, onClose }: CardDetailModalProp
                 <div>
                   <h3 className="text-xl font-bold">{card.name}</h3>
                   <p className="text-sm text-gray-500">{card.id}</p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 text-sm">
+                  {/* quick pricing summary */}
+                  {card.pricing && card.pricing.cardmarket?.avg != null && (
+                    <p className="text-xs text-gray-400 mt-1">
+                      €{card.pricing.cardmarket.avg.toFixed(2)}
+                      {card.pricing.tcgplayer?.normal?.midPrice != null && (
+                        <> / ${card.pricing.tcgplayer.normal.midPrice.toFixed(2)}</>
+                      )}
+                    </p>
+                  )}
                   {card.set && (
                     <div>
                       <span className="text-gray-500">{t('detail.set')}</span>
