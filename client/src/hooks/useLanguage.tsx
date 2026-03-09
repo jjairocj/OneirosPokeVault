@@ -57,6 +57,7 @@ const translations = {
     // CardItem
     'card.owned': 'Remove',
     'card.notOwned': 'I have it!',
+    'card.confirmDelete': 'Are you sure you want to remove this card from your collection?',
     'card.details': 'Details',
     // Detail Modal
     'detail.title': 'Card Details',
@@ -190,6 +191,7 @@ const translations = {
     'entry.pocket': 'Pocket',
     'card.owned': 'Quitar',
     'card.notOwned': 'La tengo!',
+    'card.confirmDelete': '¿Estás seguro de que quieres quitar esta carta de tu colección?',
     'card.details': 'Detalles',
     'detail.title': 'Detalles de la carta',
     'detail.set': 'Set',

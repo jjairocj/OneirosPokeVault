@@ -69,6 +69,12 @@ export async function apiFetch(
         if (newToken) {
           headers['Authorization'] = `Bearer ${newToken}`;
           res = await fetch(url, { ...options, headers, credentials: 'include' });
+        } else {
+          // Refresh failed, clear session and potentially redirect
+          setAccessToken(null);
+          if (typeof window !== 'undefined' && !path.includes('/api/auth/')) {
+            window.dispatchEvent(new CustomEvent('auth:logout'));
+          }
         }
       } else {
         isRefreshing = true;
@@ -79,6 +85,11 @@ export async function apiFetch(
         if (newToken) {
           headers['Authorization'] = `Bearer ${newToken}`;
           res = await fetch(url, { ...options, headers, credentials: 'include' });
+        } else {
+          setAccessToken(null);
+          if (typeof window !== 'undefined' && !path.includes('/api/auth/')) {
+            window.dispatchEvent(new CustomEvent('auth:logout'));
+          }
         }
       }
     }

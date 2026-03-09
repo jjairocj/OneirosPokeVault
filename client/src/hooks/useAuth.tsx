@@ -38,6 +38,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
+
+    const handleAuthLogout = () => {
+      setUser(null);
+      setAccessToken(null);
+    };
+
+    window.addEventListener('auth:logout', handleAuthLogout);
+    return () => window.removeEventListener('auth:logout', handleAuthLogout);
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {

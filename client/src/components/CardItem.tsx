@@ -20,6 +20,10 @@ export default function CardItem({ id, name, image, owned, onToggle, onDetails }
   };
 
   const handleClick = () => {
+    if (owned && !window.confirm(t('card.confirmDelete'))) {
+      return;
+    }
+
     if (isTouchRef.current) {
       // Touch device: first tap shows overlay, second tap toggles
       isTouchRef.current = false;

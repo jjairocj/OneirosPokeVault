@@ -20,7 +20,8 @@ function generateRefreshToken(): string {
 
 async function saveRefreshToken(userId: number, token: string): Promise<void> {
   const hash = await bcrypt.hash(token, SALT_ROUNDS);
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+  const days = parseInt(process.env.JWT_REFRESH_EXPIRES || '7d');
+  const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
   await db.insert(refreshTokens).values({ userId, token: hash, expiresAt });
 }
 
@@ -55,7 +56,7 @@ export async function register(req: Request, res: Response): Promise<void> {
       httpOnly: true,
       secure: true,
       sameSite: 'none',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: 30 * 24 * 60 * 60 * 1000,
     });
 
     res.status(201).json({
@@ -97,7 +98,7 @@ export async function login(req: Request, res: Response): Promise<void> {
       httpOnly: true,
       secure: true,
       sameSite: 'none',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: 30 * 24 * 60 * 60 * 1000,
     });
 
     res.json({
@@ -151,7 +152,7 @@ export async function refresh(req: Request, res: Response): Promise<void> {
       httpOnly: true,
       secure: true,
       sameSite: 'none',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: 30 * 24 * 60 * 60 * 1000,
     });
 
     res.json({

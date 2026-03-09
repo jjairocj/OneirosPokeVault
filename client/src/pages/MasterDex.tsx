@@ -147,9 +147,10 @@ interface PokemonSlotProps {
   slot?: MasterDexSlot;
   onOpenPicker: (dexId: number, name: string) => void;
   onClear: (dexId: number) => void;
+  t: (key: any) => string;
 }
 
-function PokemonSlot({ dexId, name, slot, onOpenPicker, onClear }: PokemonSlotProps) {
+function PokemonSlot({ dexId, name, slot, onOpenPicker, onClear, t }: PokemonSlotProps) {
   const isFilled = !!slot;
 
   return (
@@ -190,7 +191,12 @@ function PokemonSlot({ dexId, name, slot, onOpenPicker, onClear }: PokemonSlotPr
       {isFilled && (
         <button
           type="button"
-          onClick={(e) => { e.stopPropagation(); onClear(dexId); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (window.confirm(t('card.confirmDelete'))) {
+              onClear(dexId);
+            }
+          }}
           className="absolute -top-1 -left-1 bg-red-500/80 text-white rounded-full w-4 h-4 text-[8px] items-center justify-center hidden group-hover:flex"
         >
           ✕
@@ -204,9 +210,10 @@ function PokemonSlot({ dexId, name, slot, onOpenPicker, onClear }: PokemonSlotPr
 interface VariantSlotProps {
   slot: MasterDexSlot;
   onClear: (slot: MasterDexSlot) => void;
+  t: (key: any) => string;
 }
 
-function VariantSlot({ slot, onClear }: VariantSlotProps) {
+function VariantSlot({ slot, onClear, t }: VariantSlotProps) {
   return (
     <div className="group relative flex flex-col items-center gap-1">
       <div className="relative w-full aspect-[2.5/3.5] rounded-lg overflow-hidden border-2 border-amber-500/50 shadow-md shadow-amber-500/10">
@@ -224,7 +231,11 @@ function VariantSlot({ slot, onClear }: VariantSlotProps) {
         )}
         <button
           type="button"
-          onClick={() => onClear(slot)}
+          onClick={() => {
+            if (window.confirm(t('card.confirmDelete'))) {
+              onClear(slot);
+            }
+          }}
           className="absolute -top-1 -left-1 bg-red-500/80 text-white rounded-full w-4 h-4 text-[8px] items-center justify-center hidden group-hover:flex"
         >
           ✕
@@ -452,6 +463,7 @@ export default function MasterDex() {
                     setPicker({ dexId: id, type: 'base', initialSearch: name });
                   }}
                   onClear={(id) => unassignSlot('base', String(id))}
+                  t={t}
                 />
               ))}
             </div>
@@ -528,6 +540,7 @@ export default function MasterDex() {
                     key={slot.slotKey}
                     slot={slot}
                     onClear={(s) => unassignSlot('variant', s.slotKey)}
+                    t={t}
                   />
                 ))}
               </div>
