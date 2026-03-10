@@ -1,7 +1,7 @@
 import TCGdex from '@tcgdex/sdk';
 
 const tcgdex = new TCGdex('en');
-tcgdex.setCacheTTL(0); // Disable cache to avoid localStorage quota issues with large results
+tcgdex.setCacheTTL(0); // Disable cache to avoid localStorage quota issues
 
 // --- LRU eviction for @tcgdex-cache entries ---
 const CACHE_PREFIX = '@tcgdex-cache';
@@ -23,10 +23,17 @@ function getMeta(): string[] {
   }
 }
 
+function saveMeta(meta: string[]) {
+  try {
+    // Use native setItem to avoid infinite recursion inside the patch
+    Storage.prototype.setItem.call(localStorage, CACHE_META_KEY, JSON.stringify(meta));
+  } catch { /* ignore */ }
+}
+
 function enforceCacheLimit() {
   const keys = getTcgdexKeys();
 
-  // Safety net: more than 20 → nuke everything
+  // Safety net: more than CLEAR_THRESHOLD → nuke everything
   if (keys.length > CLEAR_THRESHOLD) {
     keys.forEach((k) => localStorage.removeItem(k));
     localStorage.removeItem(CACHE_META_KEY);
@@ -41,45 +48,41 @@ function enforceCacheLimit() {
       if (oldest) {
         localStorage.removeItem(oldest);
       } else {
-        // No meta info → just remove the first key found
         const current = getTcgdexKeys();
         if (current.length) localStorage.removeItem(current[0]);
         else break;
       }
     }
-    try {
-      localStorage.setItem(CACHE_META_KEY, JSON.stringify(meta));
-    } catch { /* ignore */ }
+    saveMeta(meta);
   }
 }
 
-// Patch setItem to intercept tcgdex cache writes
-const _origSetItem = localStorage.setItem.bind(localStorage);
-localStorage.setItem = function (key: string, value: string) {
+// Patch Storage.prototype.setItem — works in Safari, Chrome, Firefox
+// (patching the instance directly fails silently in Safari)
+const _origSetItem = Storage.prototype.setItem;
+Storage.prototype.setItem = function (key: string, value: string) {
   if (key.startsWith(CACHE_PREFIX) && key !== CACHE_META_KEY) {
     enforceCacheLimit();
-    // Update meta: move this key to the end (most recent)
+    // Track insertion order
     const meta = getMeta().filter((k) => k !== key);
     meta.push(key);
-    try { _origSetItem(CACHE_META_KEY, JSON.stringify(meta)); } catch { /* ignore */ }
+    saveMeta(meta);
   }
-  _origSetItem(key, value);
+  _origSetItem.call(this, key, value);
 };
 
-// Wrap to handle any remaining localStorage quota errors
+// Fallback: handle any quota errors that slip through
 const originalRequest = (tcgdex as any).request;
 (tcgdex as any).request = async function (url: string, options: any) {
   try {
     return await originalRequest.call(this, url, options);
   } catch (error: any) {
     if (error?.message?.includes('QuotaExceededError') || error?.message?.includes('exceeded the quota')) {
-      console.warn('localStorage quota exceeded, clearing cache...');
+      console.warn('localStorage quota exceeded, clearing tcgdex cache...');
       try {
         getTcgdexKeys().forEach((k) => localStorage.removeItem(k));
         localStorage.removeItem(CACHE_META_KEY);
-      } catch (e) {
-        console.error('Failed to clear cache:', e);
-      }
+      } catch { /* ignore */ }
       return await originalRequest.call(this, url, options);
     }
     throw error;
