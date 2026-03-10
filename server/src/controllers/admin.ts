@@ -1,6 +1,6 @@
 import { Response } from 'express';
 import { db } from '../db/index.js';
-import { users, pokemonDex, ownedCards, collectionReports, masterdexSlots } from '../db/schema.js';
+import { users, pokemonDex, collectionReports, masterdexSlots } from '../db/schema.js';
 import { eq, desc } from 'drizzle-orm';
 import { AuthRequest } from '../middleware/authGuard.js';
 import TCGdex from '@tcgdex/sdk';
@@ -56,151 +56,83 @@ export async function updateUserPlan(req: AuthRequest, res: Response): Promise<v
 export async function generateCollectionReport(req: AuthRequest, res: Response): Promise<void> {
   try {
     const userId = req.userId!;
-    console.log('Generating collection report for user:', userId);
-
-    // Test basic database connectivity
-    console.log('Testing database connectivity...');
-    const testQuery = await db.select().from(users).limit(1);
-    console.log('Database test successful, found users:', testQuery.length);
 
     // Get all masterdex slots for user
-    console.log('Fetching masterdex slots...');
     const masterdexCards = await db
       .select()
       .from(masterdexSlots)
       .where(eq(masterdexSlots.userId, userId));
-    console.log('Found masterdex slots:', masterdexCards.length);
 
-    // Get owned cards
-    console.log('Fetching owned cards...');
-    const owned = await db
-      .select({ cardId: ownedCards.cardId })
-      .from(ownedCards)
-      .where(eq(ownedCards.userId, userId));
-    console.log('Found owned cards:', owned.length);
-
-    const ownedCardIds = new Set(owned.map(o => o.cardId));
-    console.log('Owned card IDs:', Array.from(ownedCardIds));
-
-    // Initialize TCGdex
-    console.log('Initializing TCGdex...');
     const sdk = new TCGdex('en');
 
-    // Calculate prices for owned cards
+    // existingCards = base slots with a card assigned
+    const filledBaseSlots = masterdexCards.filter(
+      slot => slot.slotType === 'base' && slot.cardId
+    );
+
     const existingCards: any[] = [];
     let totalValue = 0;
-    console.log('Processing owned cards for pricing...');
 
-    for (const ownedCard of owned) {
+    for (const slot of filledBaseSlots) {
       try {
-        console.log(`Fetching card data for: ${ownedCard.cardId}`);
-        const cardData = await sdk.card.get(ownedCard.cardId);
-        console.log(`Card data received for ${ownedCard.cardId}:`, {
-          name: cardData?.name,
-          hasPricing: !!(cardData && (cardData as any).pricing),
-          pricingKeys: cardData ? Object.keys((cardData as any).pricing || {}) : []
-        });
+        const cardData = await sdk.card.get(slot.cardId!);
         if (cardData) {
-          const price = (cardData as any).pricing?.cardmarket?.avg || (cardData as any).pricing?.tcgplayer?.normal?.midPrice || 0;
-          console.log(`Card ${ownedCard.cardId} final price: ${price}`);
-
-          // Find corresponding masterdex slot for additional info
-          const slotInfo = masterdexCards.find(slot => slot.cardId === ownedCard.cardId);
-
+          const price = (cardData as any).pricing?.cardmarket?.avg
+                     || (cardData as any).pricing?.tcgplayer?.normal?.midPrice
+                     || 0;
           existingCards.push({
-            cardId: ownedCard.cardId,
-            name: slotInfo?.cardName || cardData.name,
-            image: slotInfo?.cardImage || (cardData as any).image,
-            price: price,
-            slotType: slotInfo?.slotType || 'unknown',
-            slotKey: slotInfo?.slotKey || 'unknown'
+            cardId: slot.cardId!,
+            name: slot.cardName || cardData.name,
+            image: slot.cardImage || (cardData as any).image,
+            price,
+            slotType: slot.slotType,
+            slotKey: slot.slotKey,
           });
           totalValue += price;
-        } else {
-          console.log(`No card data found for ${ownedCard.cardId}`);
         }
       } catch (error) {
-        console.error(`Error fetching card ${ownedCard.cardId}:`, error);
+        console.error(`Error fetching card ${slot.cardId}:`, error);
       }
     }
 
-    console.log(`Processed ${existingCards.length} existing cards, total value: ${totalValue}`);
-
-    // Sort existing cards by price descending
     existingCards.sort((a, b) => b.price - a.price);
 
-    // Get all available Pokemon from pokemonDex
+    // missingPokemon = dex entries NOT covered by a filled base slot
+    const coveredDexIds = new Set(
+      filledBaseSlots.map(slot => parseInt(slot.slotKey, 10))
+    );
+
     const allPokemon = await db.select().from(pokemonDex);
-    console.log(`Total Pokemon in dex: ${allPokemon.length}`);
-
-    // Get owned Pokemon dexIds from owned cards
-    const ownedDexIds = new Set();
-    for (const ownedCard of owned) {
-      try {
-        const cardData = await sdk.card.get(ownedCard.cardId);
-        if (cardData && (cardData as any).dexId && Array.isArray((cardData as any).dexId)) {
-          ownedDexIds.add((cardData as any).dexId[0]);
-        }
-      } catch (error) {
-        console.error(`Error getting dexId for card ${ownedCard.cardId}:`, error);
-      }
-    }
-    console.log(`User owns Pokemon with dexIds:`, Array.from(ownedDexIds));
-
-    // Find missing Pokemon
     const missingPokemon: any[] = [];
+
     for (const pokemon of allPokemon) {
-      if (!ownedDexIds.has(pokemon.dexId)) {
+      if (!coveredDexIds.has(pokemon.dexId)) {
         try {
-          // Get Pokemon data from PokeAPI
           const pokeResponse = await fetch(`https://pokeapi.co/api/v2/pokemon/${pokemon.dexId}`);
           const pokeData = await pokeResponse.json();
-          const sprite = pokeData.sprites?.front_default || pokeData.sprites?.other?.['official-artwork']?.front_default;
-
-          missingPokemon.push({
-            dexId: pokemon.dexId,
-            name: pokemon.name,
-            image: sprite
-          });
+          const sprite = pokeData.sprites?.front_default
+                      || pokeData.sprites?.other?.['official-artwork']?.front_default;
+          missingPokemon.push({ dexId: pokemon.dexId, name: pokemon.name, image: sprite });
         } catch (error) {
           console.error(`Error fetching PokeAPI data for dexId ${pokemon.dexId}:`, error);
-          // Fallback without image
-          missingPokemon.push({
-            dexId: pokemon.dexId,
-            name: pokemon.name,
-            image: null
-          });
+          missingPokemon.push({ dexId: pokemon.dexId, name: pokemon.name, image: null });
         }
       }
     }
 
-    console.log(`Found ${missingPokemon.length} missing Pokemon`);
-
-    // Create report data
     const reportData = {
       existingCards,
       missingPokemon,
       totalValue,
       generatedAt: new Date().toISOString()
     };
-    console.log('Report data created:', {
-      existingCardsCount: existingCards.length,
-      missingPokemonCount: missingPokemon.length,
-      totalValue
-    });
 
-    // Delete previous report
-    console.log('Deleting previous reports...');
     await db.delete(collectionReports).where(eq(collectionReports.userId, userId));
-
-    // Save new report
-    console.log('Saving new report...');
     await db.insert(collectionReports).values({
       userId,
       reportData: JSON.stringify(reportData)
     });
 
-    console.log('Report generated successfully');
     res.json(reportData);
   } catch (error) {
     console.error('Generate collection report error:', error);
