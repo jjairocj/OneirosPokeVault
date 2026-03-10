@@ -77,8 +77,8 @@ export async function generateCollectionReport(req: AuthRequest, res: Response):
       try {
         const cardData = await sdk.card.get(slot.cardId!);
         if (cardData) {
-          const price = (cardData as any).pricing?.cardmarket?.avg
-                     || (cardData as any).pricing?.tcgplayer?.normal?.midPrice
+          const price = (cardData as any).pricing?.tcgplayer?.normal?.midPrice
+                     || (cardData as any).pricing?.cardmarket?.avg
                      || 0;
           existingCards.push({
             cardId: slot.cardId!,

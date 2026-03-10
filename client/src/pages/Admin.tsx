@@ -212,10 +212,6 @@ function PokemonDexManager() {
         </table>
       </div>
 
-      {/* Collection Report Section */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <CollectionReportManager />
-      </div>
     </div>
   );
 }
@@ -227,6 +223,8 @@ function CollectionReportManager() {
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [activeTab, setActiveTab] = useState<'existing' | 'missing'>('existing');
+  const [searchExisting, setSearchExisting] = useState('');
+  const [searchMissing, setSearchMissing] = useState('');
 
   useEffect(() => {
     loadReport();
@@ -295,7 +293,7 @@ function CollectionReportManager() {
               Generated: {new Date(report.generatedAt).toLocaleString()}
             </p>
             <p className="text-lg font-semibold text-gray-200 mt-2">
-              Total Collection Value: €{report.totalValue.toFixed(2)}
+              Total Collection Value: ${report.totalValue.toFixed(2)}
             </p>
           </div>
 
@@ -326,44 +324,74 @@ function CollectionReportManager() {
           {/* Existing Cards Tab */}
           {activeTab === 'existing' && (
             <div className="space-y-3">
-              {report.existingCards?.map((card: any, index: number) => (
-                <div key={card.cardId} className="flex items-center gap-4 bg-gray-800/30 rounded-lg p-4">
-                  <span className="text-sm text-gray-500 w-8">#{index + 1}</span>
-                  <img
-                    src={card.image ? `${card.image}/low.webp` : '/card-back.svg'}
-                    alt={card.name}
-                    className="w-12 h-16 object-cover rounded"
-                    onError={(e) => { (e.target as HTMLImageElement).src = '/card-back.svg'; }}
-                  />
-                  <div className="flex-1">
-                    <p className="font-medium text-gray-200">{card.name}</p>
-                    <p className="text-xs text-gray-500">{card.cardId}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-vault-400">€{card.price.toFixed(2)}</p>
-                  </div>
-                </div>
-              )) || <p className="text-gray-500">No existing cards found.</p>}
+              <input
+                type="text"
+                value={searchExisting}
+                onChange={(e) => setSearchExisting(e.target.value)}
+                placeholder="Search by name or card ID..."
+                className="w-full max-w-sm bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-vault-500"
+              />
+              {(report.existingCards?.filter((c: any) =>
+                !searchExisting || c.name.toLowerCase().includes(searchExisting.toLowerCase()) || c.cardId.toLowerCase().includes(searchExisting.toLowerCase())
+              ) ?? []).length === 0
+                ? <p className="text-gray-500 py-4">No existing cards found.</p>
+                : report.existingCards
+                    ?.filter((c: any) => !searchExisting || c.name.toLowerCase().includes(searchExisting.toLowerCase()) || c.cardId.toLowerCase().includes(searchExisting.toLowerCase()))
+                    .map((card: any, index: number) => (
+                      <div key={card.cardId} className="flex items-center gap-4 bg-gray-800/30 rounded-lg p-4">
+                        <span className="text-sm text-gray-500 w-8">#{index + 1}</span>
+                        <img
+                          src={card.image ? `${card.image}/low.webp` : '/card-back.svg'}
+                          alt={card.name}
+                          className="w-12 h-16 object-cover rounded"
+                          onError={(e) => { (e.target as HTMLImageElement).src = '/card-back.svg'; }}
+                        />
+                        <div className="flex-1">
+                          <p className="font-medium text-gray-200">{card.name}</p>
+                          <p className="text-xs text-gray-500">{card.cardId}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold text-vault-400">${card.price.toFixed(2)}</p>
+                        </div>
+                      </div>
+                    ))
+              }
             </div>
           )}
 
           {/* Missing Pokémon Tab */}
           {activeTab === 'missing' && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {report.missingPokemon?.map((pokemon: any) => (
-                <div key={pokemon.dexId} className="flex items-center gap-3 bg-gray-800/30 rounded-lg p-3">
-                  <img
-                    src={pokemon.image || '/card-back.svg'}
-                    alt={pokemon.name}
-                    className="w-12 h-12 object-cover rounded-full"
-                    onError={(e) => { (e.target as HTMLImageElement).src = '/card-back.svg'; }}
-                  />
-                  <div>
-                    <p className="font-medium text-gray-200">#{String(pokemon.dexId).padStart(3, '0')}</p>
-                    <p className="text-sm text-gray-400 capitalize">{pokemon.name}</p>
-                  </div>
-                </div>
-              )) || <p className="text-gray-500">No missing Pokémon found.</p>}
+            <div className="space-y-4">
+              <input
+                type="text"
+                value={searchMissing}
+                onChange={(e) => setSearchMissing(e.target.value)}
+                placeholder="Search by name or dex number..."
+                className="w-full max-w-sm bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-vault-500"
+              />
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {(report.missingPokemon?.filter((p: any) =>
+                  !searchMissing || p.name.toLowerCase().includes(searchMissing.toLowerCase()) || String(p.dexId).includes(searchMissing)
+                ) ?? []).length === 0
+                  ? <p className="text-gray-500 col-span-full">No missing Pokémon found.</p>
+                  : report.missingPokemon
+                      ?.filter((p: any) => !searchMissing || p.name.toLowerCase().includes(searchMissing.toLowerCase()) || String(p.dexId).includes(searchMissing))
+                      .map((pokemon: any) => (
+                        <div key={pokemon.dexId} className="flex items-center gap-3 bg-gray-800/30 rounded-lg p-3">
+                          <img
+                            src={pokemon.image || '/card-back.svg'}
+                            alt={pokemon.name}
+                            className="w-12 h-12 object-cover rounded-full"
+                            onError={(e) => { (e.target as HTMLImageElement).src = '/card-back.svg'; }}
+                          />
+                          <div>
+                            <p className="font-medium text-gray-200">#{String(pokemon.dexId).padStart(3, '0')}</p>
+                            <p className="text-sm text-gray-400 capitalize">{pokemon.name}</p>
+                          </div>
+                        </div>
+                      ))
+                }
+              </div>
             </div>
           )}
         </div>
@@ -382,6 +410,7 @@ export default function Admin() {
   const { user, loading: authLoading } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<'config' | 'report' | 'users'>('config');
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<number | null>(null);
@@ -441,6 +470,13 @@ export default function Admin() {
 
   if (!user || user.role !== 'admin') return null;
 
+  const tabClass = (tab: typeof activeTab) =>
+    `px-4 py-2.5 text-sm font-medium transition-colors border-b-2 ${
+      activeTab === tab
+        ? 'text-purple-400 border-purple-400'
+        : 'text-gray-400 hover:text-gray-200 border-transparent'
+    }`;
+
   return (
     <div className="min-h-screen">
       <header className="bg-gray-900 border-b border-gray-800 sticky top-0 z-50">
@@ -459,121 +495,141 @@ export default function Admin() {
             {t('admin.backHome')}
           </button>
         </div>
+
+        {/* Tab bar */}
+        <div className="max-w-7xl mx-auto px-4 flex gap-1 border-t border-gray-800">
+          <button type="button" onClick={() => setActiveTab('config')} className={tabClass('config')}>
+            Config
+          </button>
+          <button type="button" onClick={() => setActiveTab('report')} className={tabClass('report')}>
+            Collection Report
+          </button>
+          <button type="button" onClick={() => setActiveTab('users')} className={tabClass('users')}>
+            Users <span className="ml-1 text-xs opacity-60">({users.length})</span>
+          </button>
+        </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-6">
-        <PokemonDexManager />
+        {/* Config Tab */}
+        {activeTab === 'config' && <PokemonDexManager />}
 
-        <div className="mt-8 bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-800 flex items-center justify-between">
-            <h2 className="font-semibold text-gray-200">{t('admin.users')}</h2>
-            <span className="text-sm text-gray-500">{users.length} {t('admin.total')}</span>
-          </div>
+        {/* Collection Report Tab */}
+        {activeTab === 'report' && <CollectionReportManager />}
 
-          {/* Desktop table */}
-          <div className="hidden md:block overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left text-gray-500 border-b border-gray-800">
-                  <th className="px-4 py-3 font-medium">ID</th>
-                  <th className="px-4 py-3 font-medium">{t('auth.email')}</th>
-                  <th className="px-4 py-3 font-medium">{t('admin.plan')}</th>
-                  <th className="px-4 py-3 font-medium">{t('admin.role')}</th>
-                  <th className="px-4 py-3 font-medium">{t('admin.registered')}</th>
-                  <th className="px-4 py-3 font-medium">{t('admin.actions')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((u) => (
-                  <tr key={u.id} className="border-b border-gray-800/50 hover:bg-gray-800/30">
-                    <td className="px-4 py-3 text-gray-400">{u.id}</td>
-                    <td className="px-4 py-3 text-gray-200">{u.email}</td>
-                    <td className="px-4 py-3">
+        {/* Users Tab */}
+        {activeTab === 'users' && (
+          <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+            <div className="px-4 py-3 border-b border-gray-800 flex items-center justify-between">
+              <h2 className="font-semibold text-gray-200">{t('admin.users')}</h2>
+              <span className="text-sm text-gray-500">{users.length} {t('admin.total')}</span>
+            </div>
+
+            {/* Desktop table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-gray-500 border-b border-gray-800">
+                    <th className="px-4 py-3 font-medium">ID</th>
+                    <th className="px-4 py-3 font-medium">{t('auth.email')}</th>
+                    <th className="px-4 py-3 font-medium">{t('admin.plan')}</th>
+                    <th className="px-4 py-3 font-medium">{t('admin.role')}</th>
+                    <th className="px-4 py-3 font-medium">{t('admin.registered')}</th>
+                    <th className="px-4 py-3 font-medium">{t('admin.actions')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map((u) => (
+                    <tr key={u.id} className="border-b border-gray-800/50 hover:bg-gray-800/30">
+                      <td className="px-4 py-3 text-gray-400">{u.id}</td>
+                      <td className="px-4 py-3 text-gray-200">{u.email}</td>
+                      <td className="px-4 py-3">
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${u.plan === 'pro'
+                            ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                            : 'bg-gray-700 text-gray-300'
+                          }`}>
+                          {u.plan.toUpperCase()}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${u.role === 'admin'
+                            ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+                            : 'text-gray-500'
+                          }`}>
+                          {u.role}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-gray-400">
+                        {new Date(u.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="px-4 py-3">
+                        <button
+                          type="button"
+                          disabled={updating === u.id}
+                          onClick={() => togglePlan(u.id, u.plan)}
+                          className={`text-xs px-3 py-1 rounded-md font-medium transition-colors ${u.plan === 'pro'
+                              ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30'
+                              : 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 border border-amber-500/30'
+                            } disabled:opacity-50`}
+                        >
+                          {updating === u.id
+                            ? '...'
+                            : u.plan === 'pro'
+                              ? t('admin.removePro')
+                              : t('admin.givePro')}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile cards */}
+            <div className="md:hidden divide-y divide-gray-800/50">
+              {users.map((u) => (
+                <div key={u.id} className="p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-200 font-medium text-sm truncate max-w-[60%]">{u.email}</span>
+                    <div className="flex items-center gap-2">
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${u.plan === 'pro'
                           ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
                           : 'bg-gray-700 text-gray-300'
                         }`}>
                         {u.plan.toUpperCase()}
                       </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${u.role === 'admin'
-                          ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
-                          : 'text-gray-500'
-                        }`}>
-                        {u.role}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-gray-400">
+                      {u.role === 'admin' && (
+                        <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-purple-500/20 text-purple-400 border border-purple-500/30">
+                          admin
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-500">
                       {new Date(u.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="px-4 py-3">
-                      <button
-                        type="button"
-                        disabled={updating === u.id}
-                        onClick={() => togglePlan(u.id, u.plan)}
-                        className={`text-xs px-3 py-1 rounded-md font-medium transition-colors ${u.plan === 'pro'
-                            ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30'
-                            : 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 border border-amber-500/30'
-                          } disabled:opacity-50`}
-                      >
-                        {updating === u.id
-                          ? '...'
-                          : u.plan === 'pro'
-                            ? t('admin.removePro')
-                            : t('admin.givePro')}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Mobile cards */}
-          <div className="md:hidden divide-y divide-gray-800/50">
-            {users.map((u) => (
-              <div key={u.id} className="p-4 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-200 font-medium text-sm truncate max-w-[60%]">{u.email}</span>
-                  <div className="flex items-center gap-2">
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${u.plan === 'pro'
-                        ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                        : 'bg-gray-700 text-gray-300'
-                      }`}>
-                      {u.plan.toUpperCase()}
                     </span>
-                    {u.role === 'admin' && (
-                      <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-purple-500/20 text-purple-400 border border-purple-500/30">
-                        admin
-                      </span>
-                    )}
+                    <button
+                      type="button"
+                      disabled={updating === u.id}
+                      onClick={() => togglePlan(u.id, u.plan)}
+                      className={`text-xs px-3 py-1.5 rounded-md font-medium transition-colors ${u.plan === 'pro'
+                          ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30'
+                          : 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 border border-amber-500/30'
+                        } disabled:opacity-50`}
+                    >
+                      {updating === u.id
+                        ? '...'
+                        : u.plan === 'pro'
+                          ? t('admin.removePro')
+                          : t('admin.givePro')}
+                    </button>
                   </div>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500">
-                    {new Date(u.createdAt).toLocaleDateString()}
-                  </span>
-                  <button
-                    type="button"
-                    disabled={updating === u.id}
-                    onClick={() => togglePlan(u.id, u.plan)}
-                    className={`text-xs px-3 py-1.5 rounded-md font-medium transition-colors ${u.plan === 'pro'
-                        ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30'
-                        : 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 border border-amber-500/30'
-                      } disabled:opacity-50`}
-                  >
-                    {updating === u.id
-                      ? '...'
-                      : u.plan === 'pro'
-                        ? t('admin.removePro')
-                        : t('admin.givePro')}
-                  </button>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </main>
     </div>
   );
