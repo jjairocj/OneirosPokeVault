@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import CardItem from '../components/CardItem';
 import AddBar from '../components/AddBar';
 import ProModal from '../components/ProModal';
+import TabBar from '../components/TabBar';
 import { LanguageProvider } from '../hooks/useLanguage';
 
 function Wrapper({ children }: { children: React.ReactNode }) {
@@ -146,6 +147,100 @@ describe('AddBar', () => {
 
     expect(screen.getByPlaceholderText(/search pokemon/i)).toBeDisabled();
     expect(screen.getByText('Add')).toBeDisabled();
+  });
+});
+
+describe('AddBar - artist mode', () => {
+  it('should render artist mode button', () => {
+    render(<AddBar onAdd={() => {}} />, { wrapper: Wrapper });
+    expect(screen.getByText('Artist')).toBeInTheDocument();
+  });
+
+  it('should show artist placeholder when artist mode is selected', () => {
+    render(<AddBar onAdd={() => {}} />, { wrapper: Wrapper });
+    fireEvent.click(screen.getByText('Artist'));
+    expect(screen.getByPlaceholderText(/illustrator/i)).toBeInTheDocument();
+  });
+
+  it('should call onAdd with artist: prefix in artist mode', () => {
+    const onAdd = vi.fn();
+    render(<AddBar onAdd={onAdd} />, { wrapper: Wrapper });
+
+    fireEvent.click(screen.getByText('Artist'));
+    const input = screen.getByPlaceholderText(/illustrator/i);
+    fireEvent.change(input, { target: { value: 'Mitsuhiro Arita' } });
+    fireEvent.submit(input.closest('form')!);
+
+    expect(onAdd).toHaveBeenCalledWith('artist:Mitsuhiro Arita');
+  });
+
+  it('should hide quick suggestions chips in artist mode', () => {
+    render(<AddBar onAdd={() => {}} />, { wrapper: Wrapper });
+    fireEvent.click(screen.getByText('Artist'));
+    expect(screen.queryByText('Pikachu')).not.toBeInTheDocument();
+  });
+
+  it('should not call onAdd for empty input in artist mode', () => {
+    const onAdd = vi.fn();
+    render(<AddBar onAdd={onAdd} />, { wrapper: Wrapper });
+
+    fireEvent.click(screen.getByText('Artist'));
+    const input = screen.getByPlaceholderText(/illustrator/i);
+    fireEvent.submit(input.closest('form')!);
+
+    expect(onAdd).not.toHaveBeenCalled();
+  });
+});
+
+describe('TabBar', () => {
+  const baseProps = {
+    activeId: null,
+    onSelect: () => {},
+    onRemove: () => {},
+    cardCounts: {},
+  };
+
+  it('should display artist name without artist: prefix', () => {
+    render(
+      <TabBar
+        {...baseProps}
+        collections={[{ id: 1, userId: 1, entryName: 'artist:Mitsuhiro Arita', createdAt: '' }]}
+      />
+    );
+    expect(screen.getByText(/Mitsuhiro Arita/)).toBeInTheDocument();
+    expect(screen.queryByText(/artist:/)).not.toBeInTheDocument();
+  });
+
+  it('should display set name without set: prefix', () => {
+    render(
+      <TabBar
+        {...baseProps}
+        collections={[{ id: 1, userId: 1, entryName: 'set:swsh1:Sword & Shield', createdAt: '' }]}
+      />
+    );
+    expect(screen.getByText(/Sword & Shield/)).toBeInTheDocument();
+    expect(screen.queryByText(/set:/)).not.toBeInTheDocument();
+  });
+
+  it('should display pokemon name as-is', () => {
+    render(
+      <TabBar
+        {...baseProps}
+        collections={[{ id: 1, userId: 1, entryName: 'Pikachu', createdAt: '' }]}
+      />
+    );
+    expect(screen.getByText(/Pikachu/)).toBeInTheDocument();
+  });
+
+  it('should show owned/total counts in tab', () => {
+    render(
+      <TabBar
+        {...baseProps}
+        collections={[{ id: 1, userId: 1, entryName: 'artist:Mitsuhiro Arita', createdAt: '' }]}
+        cardCounts={{ 'artist:Mitsuhiro Arita': { owned: 5, total: 20 } }}
+      />
+    );
+    expect(screen.getByText('5/20')).toBeInTheDocument();
   });
 });
 
