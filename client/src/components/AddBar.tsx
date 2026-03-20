@@ -3,7 +3,7 @@ import { useLanguage } from '../hooks/useLanguage';
 import tcgdex from '../lib/tcgdex';
 import { Query } from '@tcgdex/sdk';
 
-type SearchMode = 'pokemon' | 'set';
+type SearchMode = 'pokemon' | 'set' | 'artist';
 
 interface SetSuggestion {
   id: string;
@@ -25,6 +25,7 @@ export default function AddBar({ onAdd, disabled }: AddBarProps) {
   const [suggestions, setSuggestions] = useState<Array<{ label: string; value: string }>>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [allSets, setAllSets] = useState<SetSuggestion[]>([]);
+  const [allIllustrators, setAllIllustrators] = useState<string[]>([]);
   const [highlightIndex, setHighlightIndex] = useState(-1);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -32,9 +33,14 @@ export default function AddBar({ onAdd, disabled }: AddBarProps) {
   // Load sets once
   useEffect(() => {
     tcgdex.set.list().then((sets) => {
-      if (sets) {
-        setAllSets(sets as unknown as SetSuggestion[]);
-      }
+      if (sets) setAllSets(sets as unknown as SetSuggestion[]);
+    }).catch(() => {});
+  }, []);
+
+  // Load illustrators once
+  useEffect(() => {
+    (tcgdex as any).fetch('illustrators').then((list: string[]) => {
+      if (list) setAllIllustrators(list.sort());
     }).catch(() => {});
   }, []);
 
@@ -95,6 +101,19 @@ export default function AddBar({ onAdd, disabled }: AddBarProps) {
     setSuggestions(matched);
   }, [allSets]);
 
+  const searchIllustrators = useCallback((query: string) => {
+    if (query.length < 1) {
+      setSuggestions([]);
+      return;
+    }
+    const q = query.toLowerCase();
+    const matched = allIllustrators
+      .filter((name) => name.toLowerCase().includes(q))
+      .slice(0, 8)
+      .map((name) => ({ label: name, value: `artist:${name}` }));
+    setSuggestions(matched);
+  }, [allIllustrators]);
+
   const handleChange = (newValue: string) => {
     setValue(newValue);
     setHighlightIndex(-1);
@@ -104,8 +123,10 @@ export default function AddBar({ onAdd, disabled }: AddBarProps) {
     debounceRef.current = setTimeout(() => {
       if (mode === 'pokemon') {
         searchPokemon(newValue);
-      } else {
+      } else if (mode === 'set') {
         searchSets(newValue);
+      } else {
+        searchIllustrators(newValue);
       }
       setShowSuggestions(true);
     }, 250);
@@ -132,6 +153,9 @@ export default function AddBar({ onAdd, disabled }: AddBarProps) {
         } else {
           onAdd(value.trim());
         }
+      } else if (mode === 'artist') {
+        const match = allIllustrators.find((n) => n.toLowerCase() === value.trim().toLowerCase());
+        onAdd(`artist:${match ?? value.trim()}`);
       } else {
         onAdd(value.trim());
       }
@@ -181,6 +205,17 @@ export default function AddBar({ onAdd, disabled }: AddBarProps) {
         >
           {t('addBar.modeSet')}
         </button>
+        <button
+          type="button"
+          onClick={() => { setMode('artist'); setValue(''); setSuggestions([]); }}
+          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+            mode === 'artist'
+              ? 'bg-vault-600 text-white shadow-sm'
+              : 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/50'
+          }`}
+        >
+          {t('addBar.modeArtist')}
+        </button>
       </div>
 
       {/* Search bar */}
@@ -192,7 +227,7 @@ export default function AddBar({ onAdd, disabled }: AddBarProps) {
             onChange={(e) => handleChange(e.target.value)}
             onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
             onKeyDown={handleKeyDown}
-            placeholder={mode === 'pokemon' ? t('addBar.placeholder') : t('addBar.placeholderSet')}
+            placeholder={mode === 'pokemon' ? t('addBar.placeholder') : mode === 'set' ? t('addBar.placeholderSet') : t('addBar.placeholderArtist')}
             className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-vault-500 focus:border-transparent transition-all"
             disabled={disabled}
             autoComplete="off"

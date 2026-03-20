@@ -29,23 +29,31 @@ interface EntryViewProps {
 export default function EntryView({ entryName, isOwned, onToggleOwned, onCardsLoaded }: EntryViewProps) {
   const { t } = useLanguage();
   const { user } = useAuth();
-  const { cards, loading, error, searchByName, searchBySet } = useCards();
+  const { cards, loading, error, searchByName, searchBySet, searchByIllustrator } = useCards();
   const [source, setSource] = useState<SourceFilter>('all');
   const [detailCardId, setDetailCardId] = useState<string | null>(null);
 
   const isPro = user?.plan === 'pro' || user?.role === 'admin';
 
   const isSetEntry = entryName.startsWith('set:');
-  const displayName = isSetEntry ? entryName.split(':')[2] || entryName : entryName;
+  const isArtistEntry = entryName.startsWith('artist:');
+  const displayName = isSetEntry
+    ? entryName.split(':')[2] || entryName
+    : isArtistEntry
+    ? entryName.split(':')[1] || entryName
+    : entryName;
 
   useEffect(() => {
     if (isSetEntry) {
       const setId = entryName.split(':')[1];
       searchBySet(setId);
+    } else if (isArtistEntry) {
+      const artistName = entryName.split(':')[1];
+      searchByIllustrator(artistName);
     } else {
       searchByName(entryName);
     }
-  }, [entryName, searchByName, searchBySet, isSetEntry]);
+  }, [entryName, searchByName, searchBySet, searchByIllustrator, isSetEntry, isArtistEntry]);
 
   useEffect(() => {
     onCardsLoaded(entryName, cards);

@@ -133,5 +133,42 @@ export function useCards() {
     }
   }, []);
 
-  return { cards, loading, error, searchByName, searchBySet, getCardDetail };
+  const searchByIllustrator = useCallback(async (name: string) => {
+    if (!name.trim()) {
+      setCards([]);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const results = await tcgdex.card.list(
+        Query.create()
+          .equal('illustrator', name.trim())
+          .sort('localId', 'ASC')
+      );
+
+      if (!results || results.length === 0) {
+        setCards([]);
+        return;
+      }
+
+      const mapped: CardSummary[] = results.map((c) => ({
+        id: c.id,
+        localId: c.localId,
+        name: c.name,
+        image: c.image ? c.getImageURL('low', 'webp') : FALLBACK_IMAGE,
+      }));
+
+      setCards(mapped);
+    } catch (err: any) {
+      setError(err.message || 'Failed to fetch cards');
+      setCards([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return { cards, loading, error, searchByName, searchBySet, searchByIllustrator, getCardDetail };
 }

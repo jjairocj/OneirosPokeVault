@@ -17,7 +17,7 @@ export default function TabBar({ collections, activeId, onSelect, onRemove, card
   const q = search.trim().toLowerCase();
   const filtered = q
     ? collections.filter((col) => {
-        const label = col.entryName.startsWith('set:') ? col.entryName.split(':')[2] : col.entryName;
+        const label = col.entryName.startsWith('set:') ? col.entryName.split(':')[2] : col.entryName.startsWith('artist:') ? col.entryName.split(':')[1] : col.entryName;
         return label.toLowerCase().includes(q);
       })
     : collections;
@@ -50,7 +50,7 @@ export default function TabBar({ collections, activeId, onSelect, onRemove, card
         {filtered.map((col) => {
           const counts = cardCounts[col.entryName] || { owned: 0, total: 0 };
           const isActive = col.id === activeId;
-          const label = col.entryName.startsWith('set:') ? col.entryName.split(':')[2] : col.entryName;
+          const label = col.entryName.startsWith('set:') ? col.entryName.split(':')[2] : col.entryName.startsWith('artist:') ? col.entryName.split(':')[1] : col.entryName;
 
           return (
             <button

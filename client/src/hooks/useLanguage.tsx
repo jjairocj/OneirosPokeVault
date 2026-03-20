@@ -48,6 +48,8 @@ const translations = {
     'addBar.button': 'Add',
     'addBar.modePokemon': 'Pokemon',
     'addBar.modeSet': 'Set',
+    'addBar.modeArtist': 'Artist',
+    'addBar.placeholderArtist': 'Search an illustrator...',
     // EntryView
     'entry.noCards': 'No cards found for',
     'entry.error': 'Error loading cards',
@@ -198,6 +200,8 @@ const translations = {
     'addBar.button': 'Agregar',
     'addBar.modePokemon': 'Pokemon',
     'addBar.modeSet': 'Set',
+    'addBar.modeArtist': 'Artista',
+    'addBar.placeholderArtist': 'Buscar un ilustrador...',
     'entry.noCards': 'No se encontraron cartas para',
     'entry.error': 'Error cargando cartas',
     'entry.all': 'Todas',
