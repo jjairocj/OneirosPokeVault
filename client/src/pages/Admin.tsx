@@ -3,408 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useLanguage } from '../hooks/useLanguage';
 import { apiFetch } from '../lib/api';
+import PokemonDexManager from '../components/admin/PokemonDexManager';
+import CollectionReportManager from '../components/admin/CollectionReportManager';
+import UsersTable from '../components/admin/UsersTable';
 
-interface AdminUser {
-  id: number;
-  email: string;
-  plan: string;
-  role: string;
-  createdAt: string;
-}
-
-interface PokemonDexEntry {
-  dexId: number;
-  name: string;
-}
-
-// --- Pokemon Dex Management Section ---
-function PokemonDexManager() {
-  const [entries, setEntries] = useState<PokemonDexEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [editName, setEditName] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [newDexId, setNewDexId] = useState('');
-  const [newName, setNewName] = useState('');
-  const [adding, setAdding] = useState(false);
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    apiFetch('/api/pokemon-dex')
-      .then((r) => r.json())
-      .then((data) => setEntries(data))
-      .catch(() => { })
-      .finally(() => setLoading(false));
-  }, []);
-
-  const filtered = entries.filter(
-    (e) =>
-      String(e.dexId).includes(search) ||
-      e.name.toLowerCase().includes(search.toLowerCase())
-  );
-
-  async function saveEdit(dexId: number) {
-    if (!editName.trim()) return;
-    setSaving(true);
-    try {
-      const res = await apiFetch(`/api/pokemon-dex/${dexId}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ name: editName.trim() }),
-      });
-      if (res.ok) {
-        const updated: PokemonDexEntry = await res.json();
-        setEntries((prev) => prev.map((e) => (e.dexId === dexId ? updated : e)));
-        setEditingId(null);
-      }
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function addPokemon() {
-    const dexId = parseInt(newDexId, 10);
-    if (isNaN(dexId) || dexId < 1 || !newName.trim()) {
-      setError('Valid Pokédex number and name required.');
-      return;
-    }
-    setAdding(true);
-    setError('');
-    try {
-      const res = await apiFetch('/api/pokemon-dex', {
-        method: 'POST',
-        body: JSON.stringify({ dexId, name: newName.trim() }),
-      });
-      if (res.ok) {
-        const created: PokemonDexEntry = await res.json();
-        setEntries((prev) => [...prev, created].sort((a, b) => a.dexId - b.dexId));
-        setNewDexId('');
-        setNewName('');
-      } else {
-        const body = await res.json();
-        setError(body.error ?? 'Failed to add Pokémon.');
-      }
-    } finally {
-      setAdding(false);
-    }
-  }
-
-  if (loading) return <div className="text-center text-gray-500 py-8 text-sm">Loading Pokédex...</div>;
-
-  return (
-    <div className="mt-8 bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
-      <div className="px-4 py-3 border-b border-gray-800 flex items-center justify-between">
-        <h2 className="font-semibold text-gray-200">Pokédex Names</h2>
-        <span className="text-sm text-gray-500">{entries.length} entries</span>
-      </div>
-
-      {/* Add new Pokémon */}
-      <div className="px-4 py-3 border-b border-gray-800 flex flex-wrap gap-2 items-end">
-        <div className="flex flex-col gap-1">
-          <label className="text-xs text-gray-500">Dex #</label>
-          <input
-            type="number"
-            value={newDexId}
-            onChange={(e) => setNewDexId(e.target.value)}
-            placeholder="1026"
-            className="w-24 bg-gray-800 border border-gray-700 rounded-lg px-2 py-1.5 text-sm text-white focus:outline-none focus:border-vault-500"
-          />
-        </div>
-        <div className="flex flex-col gap-1">
-          <label className="text-xs text-gray-500">Name</label>
-          <input
-            type="text"
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            placeholder="New Pokémon"
-            className="w-48 bg-gray-800 border border-gray-700 rounded-lg px-2 py-1.5 text-sm text-white focus:outline-none focus:border-vault-500"
-            onKeyDown={(e) => { if (e.key === 'Enter') addPokemon(); }}
-          />
-        </div>
-        <button
-          type="button"
-          disabled={adding}
-          onClick={addPokemon}
-          className="bg-vault-600 hover:bg-vault-700 disabled:opacity-50 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition-colors"
-        >
-          {adding ? '...' : 'Add'}
-        </button>
-        {error && <p className="text-xs text-red-400 self-center">{error}</p>}
-      </div>
-
-      {/* Search */}
-      <div className="px-4 py-2 border-b border-gray-800">
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by name or number..."
-          className="w-full max-w-xs bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-vault-500"
-        />
-      </div>
-
-      <div className="overflow-y-auto max-h-96">
-        <table className="w-full text-sm">
-          <thead className="sticky top-0 bg-gray-900">
-            <tr className="text-left text-gray-500 border-b border-gray-800">
-              <th className="px-4 py-2 font-medium w-20">#</th>
-              <th className="px-4 py-2 font-medium">Name</th>
-              <th className="px-4 py-2 font-medium w-28">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((e) => (
-              <tr key={e.dexId} className="border-b border-gray-800/50 hover:bg-gray-800/20">
-                <td className="px-4 py-2 text-gray-500 tabular-nums">
-                  #{String(e.dexId).padStart(4, '0')}
-                </td>
-                <td className="px-4 py-2">
-                  {editingId === e.dexId ? (
-                    <input
-                      autoFocus
-                      type="text"
-                      value={editName}
-                      title="Edit Pokémon name"
-                      placeholder="Pokémon name"
-                      onChange={(ev) => setEditName(ev.target.value)}
-                      onKeyDown={(ev) => {
-                        if (ev.key === 'Enter') saveEdit(e.dexId);
-                        if (ev.key === 'Escape') setEditingId(null);
-                      }}
-                      className="bg-gray-800 border border-vault-500 rounded px-2 py-0.5 text-sm text-white focus:outline-none w-full max-w-xs"
-                    />
-                  ) : (
-                    <span className="text-gray-200">{e.name}</span>
-                  )}
-                </td>
-                <td className="px-4 py-2 text-right">
-                  {editingId === e.dexId ? (
-                    <div className="flex gap-1 justify-end">
-                      <button
-                        type="button"
-                        disabled={saving}
-                        onClick={() => saveEdit(e.dexId)}
-                        className="text-xs text-green-400 hover:text-green-300 disabled:opacity-50"
-                      >
-                        {saving ? '...' : 'Save'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setEditingId(null)}
-                        className="text-xs text-gray-500 hover:text-gray-300"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => { setEditingId(e.dexId); setEditName(e.name); }}
-                      className="text-xs text-gray-500 hover:text-vault-400 transition-colors"
-                    >
-                      Edit
-                    </button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-    </div>
-  );
-}
-
-// --- Collection Report Management Section ---
-function CollectionReportManager() {
-  const { t } = useLanguage();
-  const [report, setReport] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
-  const [generating, setGenerating] = useState(false);
-  const [activeTab, setActiveTab] = useState<'existing' | 'missing'>('existing');
-  const [searchExisting, setSearchExisting] = useState('');
-  const [searchMissing, setSearchMissing] = useState('');
-
-  useEffect(() => {
-    loadReport();
-  }, []);
-
-  async function loadReport() {
-    setLoading(true);
-    try {
-      const res = await apiFetch('/api/admin/collection-report');
-      if (res.ok) {
-        const data = await res.json();
-        setReport(data);
-      }
-    } catch (error) {
-      console.error('Load report error:', error);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function generateReport() {
-    setGenerating(true);
-    try {
-      const res = await apiFetch('/api/admin/collection-report', {
-        method: 'POST'
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setReport(data);
-      }
-    } catch (error) {
-      console.error('Generate report error:', error);
-    } finally {
-      setGenerating(false);
-    }
-  }
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-200">Collection Report</h2>
-        <div className="flex gap-3">
-          <button
-            type="button"
-            onClick={generateReport}
-            disabled={generating}
-            className="px-4 py-2 bg-vault-600 hover:bg-vault-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors"
-          >
-            {generating ? 'Generating...' : 'Generate Report'}
-          </button>
-          <button
-            type="button"
-            onClick={loadReport}
-            disabled={loading}
-            className="px-4 py-2 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors"
-          >
-            {loading ? 'Loading...' : 'Refresh'}
-          </button>
-        </div>
-      </div>
-
-      {report && (
-        <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
-          <div className="mb-6">
-            <p className="text-sm text-gray-400">
-              Generated: {new Date(report.generatedAt).toLocaleString()}
-            </p>
-            <p className="text-lg font-semibold text-gray-200 mt-2">
-              Total Collection Value: ${report.totalValue.toFixed(2)}
-            </p>
-          </div>
-
-          {/* Tabs */}
-          <div className="flex border-b border-gray-700 mb-6">
-            <button
-              type="button"
-              onClick={() => setActiveTab('existing')}
-              className={`px-4 py-2 font-medium text-sm transition-colors ${activeTab === 'existing'
-                  ? 'text-vault-400 border-b-2 border-vault-400'
-                  : 'text-gray-400 hover:text-gray-300'
-                }`}
-            >
-              Existing Cards ({report.existingCards?.length || 0})
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('missing')}
-              className={`px-4 py-2 font-medium text-sm transition-colors ${activeTab === 'missing'
-                  ? 'text-vault-400 border-b-2 border-vault-400'
-                  : 'text-gray-400 hover:text-gray-300'
-                }`}
-            >
-              Missing Pokémon ({report.missingPokemon?.length || 0})
-            </button>
-          </div>
-
-          {/* Existing Cards Tab */}
-          {activeTab === 'existing' && (
-            <div className="space-y-3">
-              <input
-                type="text"
-                value={searchExisting}
-                onChange={(e) => setSearchExisting(e.target.value)}
-                placeholder="Search by name or card ID..."
-                className="w-full max-w-sm bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-vault-500"
-              />
-              {(report.existingCards?.filter((c: any) =>
-                !searchExisting || c.name.toLowerCase().includes(searchExisting.toLowerCase()) || c.cardId.toLowerCase().includes(searchExisting.toLowerCase())
-              ) ?? []).length === 0
-                ? <p className="text-gray-500 py-4">No existing cards found.</p>
-                : report.existingCards
-                    ?.filter((c: any) => !searchExisting || c.name.toLowerCase().includes(searchExisting.toLowerCase()) || c.cardId.toLowerCase().includes(searchExisting.toLowerCase()))
-                    .map((card: any, index: number) => (
-                      <div key={card.cardId} className="flex items-center gap-4 bg-gray-800/30 rounded-lg p-4">
-                        <span className="text-sm text-gray-500 w-8">#{index + 1}</span>
-                        <img
-                          src={card.image ? `${card.image}/low.webp` : '/card-back.svg'}
-                          alt={card.name}
-                          className="w-12 h-16 object-cover rounded"
-                          onError={(e) => { (e.target as HTMLImageElement).src = '/card-back.svg'; }}
-                        />
-                        <div className="flex-1">
-                          <p className="font-medium text-gray-200">{card.name}</p>
-                          <p className="text-xs text-gray-500">{card.cardId}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-semibold text-vault-400">${card.price.toFixed(2)}</p>
-                        </div>
-                      </div>
-                    ))
-              }
-            </div>
-          )}
-
-          {/* Missing Pokémon Tab */}
-          {activeTab === 'missing' && (
-            <div className="space-y-4">
-              <input
-                type="text"
-                value={searchMissing}
-                onChange={(e) => setSearchMissing(e.target.value)}
-                placeholder="Search by name or dex number..."
-                className="w-full max-w-sm bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-vault-500"
-              />
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {(report.missingPokemon?.filter((p: any) =>
-                  !searchMissing || p.name.toLowerCase().includes(searchMissing.toLowerCase()) || String(p.dexId).includes(searchMissing)
-                ) ?? []).length === 0
-                  ? <p className="text-gray-500 col-span-full">No missing Pokémon found.</p>
-                  : report.missingPokemon
-                      ?.filter((p: any) => !searchMissing || p.name.toLowerCase().includes(searchMissing.toLowerCase()) || String(p.dexId).includes(searchMissing))
-                      .map((pokemon: any) => (
-                        <div key={pokemon.dexId} className="flex items-center gap-3 bg-gray-800/30 rounded-lg p-3">
-                          <img
-                            src={pokemon.image || '/card-back.svg'}
-                            alt={pokemon.name}
-                            className="w-12 h-12 object-cover rounded-full"
-                            onError={(e) => { (e.target as HTMLImageElement).src = '/card-back.svg'; }}
-                          />
-                          <div>
-                            <p className="font-medium text-gray-200">#{String(pokemon.dexId).padStart(3, '0')}</p>
-                            <p className="text-sm text-gray-400 capitalize">{pokemon.name}</p>
-                          </div>
-                        </div>
-                      ))
-                }
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {!report && !loading && (
-        <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700 text-center">
-          <p className="text-gray-400">No report generated yet. Click "Generate Report" to create one.</p>
-        </div>
-      )}
-    </div>
-  );
-}
+interface AdminUser { id: number; email: string; plan: string; role: string; createdAt: string; }
 
 export default function Admin() {
   const { user, loading: authLoading } = useAuth();
@@ -416,48 +19,25 @@ export default function Admin() {
   const [updating, setUpdating] = useState<number | null>(null);
 
   useEffect(() => {
-    if (!authLoading && (!user || user.role !== 'admin')) {
-      navigate('/');
-    }
+    if (!authLoading && (!user || user.role !== 'admin')) navigate('/');
   }, [user, authLoading, navigate]);
 
   useEffect(() => {
     if (user?.role === 'admin') {
-      fetchUsers();
+      apiFetch('/api/admin/users').then((r) => r.ok ? r.json() : []).then(setUsers).catch(() => {}).finally(() => setLoading(false));
     }
   }, [user]);
-
-  async function fetchUsers() {
-    try {
-      const res = await apiFetch('/api/admin/users');
-      if (res.ok) {
-        const data = await res.json();
-        setUsers(data);
-      }
-    } catch {
-      // silently fail
-    } finally {
-      setLoading(false);
-    }
-  }
 
   async function togglePlan(userId: number, currentPlan: string) {
     const newPlan = currentPlan === 'pro' ? 'free' : 'pro';
     setUpdating(userId);
     try {
-      const res = await apiFetch(`/api/admin/users/${userId}/plan`, {
-        method: 'PATCH',
-        body: JSON.stringify({ plan: newPlan }),
-      });
+      const res = await apiFetch(`/api/admin/users/${userId}/plan`, { method: 'PATCH', body: JSON.stringify({ plan: newPlan }) });
       if (res.ok) {
         const updated = await res.json();
         setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, plan: updated.plan } : u)));
       }
-    } catch {
-      // silently fail
-    } finally {
-      setUpdating(null);
-    }
+    } catch { /* silent */ } finally { setUpdating(null); }
   }
 
   if (authLoading || loading) {
@@ -467,15 +47,10 @@ export default function Admin() {
       </div>
     );
   }
-
   if (!user || user.role !== 'admin') return null;
 
   const tabClass = (tab: typeof activeTab) =>
-    `px-4 py-2.5 text-sm font-medium transition-colors border-b-2 ${
-      activeTab === tab
-        ? 'text-purple-400 border-purple-400'
-        : 'text-gray-400 hover:text-gray-200 border-transparent'
-    }`;
+    `px-4 py-2.5 text-sm font-medium transition-colors border-b-2 ${activeTab === tab ? 'text-purple-400 border-purple-400' : 'text-gray-400 hover:text-gray-200 border-transparent'}`;
 
   return (
     <div className="min-h-screen">
@@ -483,153 +58,20 @@ export default function Admin() {
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img src="/logo.svg" alt="Oneiros PokeVault" className="w-8 h-8" />
-            <h1 className="text-xl font-bold bg-gradient-to-r from-purple-400 to-purple-600 bg-clip-text text-transparent">
-              {t('admin.title')}
-            </h1>
+            <h1 className="text-xl font-bold bg-gradient-to-r from-purple-400 to-purple-600 bg-clip-text text-transparent">{t('admin.title')}</h1>
           </div>
-          <button
-            type="button"
-            onClick={() => navigate('/')}
-            className="text-sm text-gray-400 hover:text-white transition-colors"
-          >
-            {t('admin.backHome')}
-          </button>
+          <button type="button" onClick={() => navigate('/')} className="text-sm text-gray-400 hover:text-white transition-colors">{t('admin.backHome')}</button>
         </div>
-
-        {/* Tab bar */}
         <div className="max-w-7xl mx-auto px-4 flex gap-1 border-t border-gray-800">
-          <button type="button" onClick={() => setActiveTab('config')} className={tabClass('config')}>
-            Config
-          </button>
-          <button type="button" onClick={() => setActiveTab('report')} className={tabClass('report')}>
-            Collection Report
-          </button>
-          <button type="button" onClick={() => setActiveTab('users')} className={tabClass('users')}>
-            Users <span className="ml-1 text-xs opacity-60">({users.length})</span>
-          </button>
+          <button type="button" onClick={() => setActiveTab('config')} className={tabClass('config')}>Config</button>
+          <button type="button" onClick={() => setActiveTab('report')} className={tabClass('report')}>Collection Report</button>
+          <button type="button" onClick={() => setActiveTab('users')} className={tabClass('users')}>Users <span className="ml-1 text-xs opacity-60">({users.length})</span></button>
         </div>
       </header>
-
       <main className="max-w-7xl mx-auto px-4 py-6">
-        {/* Config Tab */}
         {activeTab === 'config' && <PokemonDexManager />}
-
-        {/* Collection Report Tab */}
         {activeTab === 'report' && <CollectionReportManager />}
-
-        {/* Users Tab */}
-        {activeTab === 'users' && (
-          <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
-            <div className="px-4 py-3 border-b border-gray-800 flex items-center justify-between">
-              <h2 className="font-semibold text-gray-200">{t('admin.users')}</h2>
-              <span className="text-sm text-gray-500">{users.length} {t('admin.total')}</span>
-            </div>
-
-            {/* Desktop table */}
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left text-gray-500 border-b border-gray-800">
-                    <th className="px-4 py-3 font-medium">ID</th>
-                    <th className="px-4 py-3 font-medium">{t('auth.email')}</th>
-                    <th className="px-4 py-3 font-medium">{t('admin.plan')}</th>
-                    <th className="px-4 py-3 font-medium">{t('admin.role')}</th>
-                    <th className="px-4 py-3 font-medium">{t('admin.registered')}</th>
-                    <th className="px-4 py-3 font-medium">{t('admin.actions')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.map((u) => (
-                    <tr key={u.id} className="border-b border-gray-800/50 hover:bg-gray-800/30">
-                      <td className="px-4 py-3 text-gray-400">{u.id}</td>
-                      <td className="px-4 py-3 text-gray-200">{u.email}</td>
-                      <td className="px-4 py-3">
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${u.plan === 'pro'
-                            ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                            : 'bg-gray-700 text-gray-300'
-                          }`}>
-                          {u.plan.toUpperCase()}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${u.role === 'admin'
-                            ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
-                            : 'text-gray-500'
-                          }`}>
-                          {u.role}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-gray-400">
-                        {new Date(u.createdAt).toLocaleDateString()}
-                      </td>
-                      <td className="px-4 py-3">
-                        <button
-                          type="button"
-                          disabled={updating === u.id}
-                          onClick={() => togglePlan(u.id, u.plan)}
-                          className={`text-xs px-3 py-1 rounded-md font-medium transition-colors ${u.plan === 'pro'
-                              ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30'
-                              : 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 border border-amber-500/30'
-                            } disabled:opacity-50`}
-                        >
-                          {updating === u.id
-                            ? '...'
-                            : u.plan === 'pro'
-                              ? t('admin.removePro')
-                              : t('admin.givePro')}
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Mobile cards */}
-            <div className="md:hidden divide-y divide-gray-800/50">
-              {users.map((u) => (
-                <div key={u.id} className="p-4 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-200 font-medium text-sm truncate max-w-[60%]">{u.email}</span>
-                    <div className="flex items-center gap-2">
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${u.plan === 'pro'
-                          ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                          : 'bg-gray-700 text-gray-300'
-                        }`}>
-                        {u.plan.toUpperCase()}
-                      </span>
-                      {u.role === 'admin' && (
-                        <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-purple-500/20 text-purple-400 border border-purple-500/30">
-                          admin
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-gray-500">
-                      {new Date(u.createdAt).toLocaleDateString()}
-                    </span>
-                    <button
-                      type="button"
-                      disabled={updating === u.id}
-                      onClick={() => togglePlan(u.id, u.plan)}
-                      className={`text-xs px-3 py-1.5 rounded-md font-medium transition-colors ${u.plan === 'pro'
-                          ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30'
-                          : 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 border border-amber-500/30'
-                        } disabled:opacity-50`}
-                    >
-                      {updating === u.id
-                        ? '...'
-                        : u.plan === 'pro'
-                          ? t('admin.removePro')
-                          : t('admin.givePro')}
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        {activeTab === 'users' && <UsersTable users={users} updating={updating} onTogglePlan={togglePlan} />}
       </main>
     </div>
   );

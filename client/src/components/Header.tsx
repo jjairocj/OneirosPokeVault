@@ -60,6 +60,29 @@ export default function Header({ totalCards, ownedCount, onAuthClick }: HeaderPr
                 {user.plan.toUpperCase()}
               </span>
               <span className="text-sm text-gray-400 hidden sm:inline">{user.email}</span>
+              {user.plan === 'free' && (
+                <button
+                  type="button"
+                  onClick={() => navigate('/pricing')}
+                  className="text-xs bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 px-2 py-1 rounded-md border border-amber-500/30 transition-colors font-bold"
+                >
+                  ⭐ Pro
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => navigate('/decks')}
+                className="text-xs bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 px-2 py-1 rounded-md border border-blue-500/30 transition-colors font-medium"
+              >
+                Decks
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate('/lists')}
+                className="text-xs bg-teal-500/20 text-teal-400 hover:bg-teal-500/30 px-2 py-1 rounded-md border border-teal-500/30 transition-colors font-medium"
+              >
+                Lists
+              </button>
               {(user.plan === 'pro' || user.role === 'admin') && (
                 <button
                   type="button"
@@ -69,6 +92,13 @@ export default function Header({ totalCards, ownedCount, onAuthClick }: HeaderPr
                   MasterDex
                 </button>
               )}
+              <button
+                type="button"
+                onClick={() => navigate('/profile')}
+                className="text-xs bg-gray-500/20 text-gray-300 hover:bg-gray-500/30 px-2 py-1 rounded-md border border-gray-500/30 transition-colors"
+              >
+                Profile
+              </button>
               {user.role === 'admin' && (
                 <button
                   type="button"

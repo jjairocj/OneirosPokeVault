@@ -3,8 +3,11 @@ import { useCards, CardSummary } from '../hooks/useCards';
 import { useLanguage } from '../hooks/useLanguage';
 import CardItem from './CardItem';
 import CardDetailModal from './CardDetailModal';
+import BinderView from './pro/BinderView';
 import { useAuth } from '../hooks/useAuth';
 import { downloadCSV } from '../lib/reports';
+
+type ViewMode = 'grid' | 'binder';
 
 type SourceFilter = 'all' | 'tcg' | 'pocket';
 
@@ -31,6 +34,7 @@ export default function EntryView({ entryName, isOwned, onToggleOwned, onCardsLo
   const { user } = useAuth();
   const { cards, loading, error, searchByName, searchBySet, searchByIllustrator } = useCards();
   const [source, setSource] = useState<SourceFilter>('all');
+  const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [detailCardId, setDetailCardId] = useState<string | null>(null);
 
   const isPro = user?.plan === 'pro' || user?.role === 'admin';
@@ -158,6 +162,24 @@ export default function EntryView({ entryName, isOwned, onToggleOwned, onCardsLo
 
         {isPro && (
           <div className="flex items-center gap-2 ml-auto border-l border-gray-700 pl-4">
+            <div className="flex items-center bg-gray-700/50 rounded-md p-0.5">
+              <button
+                type="button"
+                onClick={() => setViewMode('grid')}
+                className={`px-2 py-1 rounded text-xs transition-colors ${viewMode === 'grid' ? 'bg-vault-600 text-white' : 'text-gray-400 hover:text-white'}`}
+                title="Grid view"
+              >
+                ▦
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('binder')}
+                className={`px-2 py-1 rounded text-xs transition-colors ${viewMode === 'binder' ? 'bg-vault-600 text-white' : 'text-gray-400 hover:text-white'}`}
+                title="Binder view"
+              >
+                📕
+              </button>
+            </div>
             <button
               onClick={handleDownloadOwned}
               className="text-gray-400 hover:text-white text-xs flex items-center gap-1 transition-colors"
@@ -189,20 +211,32 @@ export default function EntryView({ entryName, isOwned, onToggleOwned, onCardsLo
         </span>
       </div>
 
-      {/* Cards grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-        {filtered.map((card) => (
-          <CardItem
-            key={card.id}
-            id={card.id}
-            name={card.name}
-            image={card.image || '/card-back.svg'}
-            owned={isOwned(card.id)}
-            onToggle={onToggleOwned}
-            onDetails={setDetailCardId}
-          />
-        ))}
-      </div>
+      {/* Cards */}
+      {viewMode === 'binder' ? (
+        <BinderView
+          cards={filtered.filter((c) => isOwned(c.id)).map((c) => ({
+            cardId: c.id,
+            cardName: c.name,
+            image: c.image || '/card-back.svg',
+            quantity: 1,
+          }))}
+          onCardClick={setDetailCardId}
+        />
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+          {filtered.map((card) => (
+            <CardItem
+              key={card.id}
+              id={card.id}
+              name={card.name}
+              image={card.image || '/card-back.svg'}
+              owned={isOwned(card.id)}
+              onToggle={onToggleOwned}
+              onDetails={setDetailCardId}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Detail modal */}
       {detailCardId && (

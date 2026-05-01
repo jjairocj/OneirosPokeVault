@@ -15,6 +15,11 @@ import ownedCardsRoutes from './routes/ownedCards.js';
 import adminRoutes from './routes/admin.js';
 import masterdexRoutes from './routes/masterdex.js';
 import pokemonDexRoutes from './routes/pokemonDex.js';
+import decksRoutes from './routes/decks.js';
+import listsRoutes from './routes/lists.js';
+import pricesRoutes from './routes/prices.js';
+import proRoutes from './routes/pro.js';
+import paymentsRoutes from './routes/payments.js';
 import { apiLimiter } from './middleware/rateLimiter.js';
 
 const app = express();
@@ -39,6 +44,11 @@ app.use('/api/owned-cards', ownedCardsRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/masterdex', masterdexRoutes);
 app.use('/api/pokemon-dex', pokemonDexRoutes);
+app.use('/api/decks', decksRoutes);
+app.use('/api/lists', listsRoutes);
+app.use('/api/prices', pricesRoutes);
+app.use('/api/pro', proRoutes);
+app.use('/api/payments', paymentsRoutes);
 
 // Health check
 app.get('/api/health', (_req, res) => {
