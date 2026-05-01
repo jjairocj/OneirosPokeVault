@@ -54,7 +54,7 @@ export async function register(req: Request, res: Response): Promise<void> {
 
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
-      secure: true,
+      secure: process.env.NODE_ENV === 'production',
       sameSite: 'none',
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
@@ -96,7 +96,7 @@ export async function login(req: Request, res: Response): Promise<void> {
 
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
-      secure: true,
+      secure: process.env.NODE_ENV === 'production',
       sameSite: 'none',
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
@@ -150,7 +150,7 @@ export async function refresh(req: Request, res: Response): Promise<void> {
 
     res.cookie('refreshToken', newRefreshToken, {
       httpOnly: true,
-      secure: true,
+      secure: process.env.NODE_ENV === 'production',
       sameSite: 'none',
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
@@ -181,7 +181,7 @@ export async function logout(req: Request, res: Response): Promise<void> {
 
     res.clearCookie('refreshToken', {
       httpOnly: true,
-      secure: true,
+      secure: process.env.NODE_ENV === 'production',
       sameSite: 'none',
     });
     res.json({ message: 'Logged out' });

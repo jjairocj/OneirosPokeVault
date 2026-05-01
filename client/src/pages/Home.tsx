@@ -4,7 +4,7 @@ import { useCollections } from '../hooks/useCollections';
 import { useOwnedCards } from '../hooks/useOwnedCards';
 import { useLanguage } from '../hooks/useLanguage';
 import { CardSummary } from '../hooks/useCards';
-import Header from '../components/Header';
+import AppShell from '../components/AppShell';
 import AddBar from '../components/AddBar';
 import TabBar from '../components/TabBar';
 import EntryView from '../components/EntryView';
@@ -79,18 +79,28 @@ export default function Home() {
     );
   }
 
-  return (
-    <div className="min-h-screen">
-      <Header
-        totalCards={totalCards}
-        ownedCount={totalOwned}
-        onAuthClick={() => setShowAuth(true)}
-      />
+  const topBar = user && totalCards > 0 ? (
+    <div className="flex items-center gap-2 text-sm text-gray-400">
+      <span className="font-medium text-gray-200">{t('header.collection')}</span>
+      <span className="text-gray-600">·</span>
+      <span>{totalOwned}/{totalCards}</span>
+      <div className="w-20 h-1.5 bg-gray-700 rounded-full overflow-hidden">
+        <div
+          className="h-full bg-purple-500 rounded-full transition-all duration-500"
+          style={{ width: `${totalCards > 0 ? Math.round((totalOwned / totalCards) * 100) : 0}%` }} // eslint-disable-line react/forbid-component-props
+        />
+      </div>
+    </div>
+  ) : (
+    <span className="text-sm font-medium text-gray-300">{t('header.collection')}</span>
+  );
 
+  return (
+    <AppShell topBar={topBar} onAuthClick={() => setShowAuth(true)}>
       {!user ? (
         <LandingPage onGetStarted={() => setShowAuth(true)} />
       ) : (
-        <main className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+        <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
           <AddBar onAdd={handleAdd} />
           <TabBar
             collections={collections}
@@ -114,11 +124,11 @@ export default function Home() {
               <p className="text-sm mt-1">{t('empty.subtitle')}</p>
             </div>
           )}
-        </main>
+        </div>
       )}
 
       {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
       {showPro && <ProModal onClose={() => setShowPro(false)} />}
-    </div>
+    </AppShell>
   );
 }

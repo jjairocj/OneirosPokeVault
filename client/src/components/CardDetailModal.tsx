@@ -72,8 +72,7 @@ export default function CardDetailModal({ cardId, onClose }: CardDetailModalProp
             {card.attacks?.length ? <CardAttacks attacks={card.attacks} /> : null}
             <CardCombatInfo card={card} />
             <CardVariantsLegal card={card} />
-            {card.pricing && <CardPricing pricing={card.pricing} />}
-            <PriceTrendPanel cardId={cardId} />
+            <PriceTrendPanel cardId={cardId} pricing={card.pricing} />
             <CardNoteEditor cardId={cardId} />
           </div>
         ) : null}

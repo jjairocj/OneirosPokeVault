@@ -7,6 +7,7 @@ import { downloadCSV } from '../lib/reports';
 import CardDetailModal from '../components/CardDetailModal';
 import ConfirmModal from '../components/ConfirmModal';
 import MasterDexHeader from '../components/masterdex/MasterDexHeader';
+import AppShell from '../components/AppShell';
 import BaseDexTab from '../components/masterdex/BaseDexTab';
 import VariantsTab from '../components/masterdex/VariantsTab';
 import CardPickerModal from '../components/masterdex/CardPickerModal';
@@ -53,10 +54,21 @@ export default function MasterDex() {
 
   if (!user || !isPro) return null;
 
+  const topBar = (
+    <div className="flex items-center gap-3">
+      <span className="text-sm font-semibold text-amber-400">🏆 MasterDex</span>
+      <span className="text-xs bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full">PRO</span>
+      <span className="text-xs text-gray-500 hidden sm:inline">
+        {baseCount}/{ALL_DEX_IDS.length} base · {variantCount} variants
+      </span>
+    </div>
+  );
+
   return (
-    <div className="min-h-screen bg-gray-950">
-      <MasterDexHeader baseCount={baseCount} totalCount={ALL_DEX_IDS.length} variantCount={variantCount}
-        onDownloadOwned={handleDownloadOwned} onDownloadMissing={handleDownloadMissing} />
+    <AppShell topBar={topBar}>
+      <div className="bg-gray-950 min-h-full">
+        <MasterDexHeader baseCount={baseCount} totalCount={ALL_DEX_IDS.length} variantCount={variantCount}
+          onDownloadOwned={handleDownloadOwned} onDownloadMissing={handleDownloadMissing} />
 
       <div className="max-w-7xl mx-auto px-4 py-6">
         <div className="flex gap-2 mb-6">
@@ -110,6 +122,7 @@ export default function MasterDex() {
           <div className="animate-spin rounded-full h-12 w-12 border-2 border-vault-500 border-t-transparent" />
         </div>
       )}
-    </div>
+      </div>
+    </AppShell>
   );
 }

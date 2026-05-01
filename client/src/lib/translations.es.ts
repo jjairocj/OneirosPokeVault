@@ -3,6 +3,7 @@ import type { en } from './translations';
 export const es: Record<keyof typeof en, string> = {
   'header.signIn': 'Iniciar sesion',
   'header.logout': 'Cerrar sesion',
+  'header.collection': 'Coleccion',
   'landing.title': 'Registra tu coleccion de Pokemon TCG',
   'landing.subtitle': 'Busca cualquier Pokemon, entrenador o carta de energia y registra cuales posees en todos los sets. Inicia sesion para comenzar.',
   'landing.cta': 'Comenzar Gratis',

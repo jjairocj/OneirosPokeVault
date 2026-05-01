@@ -2,6 +2,7 @@ export const en = {
   // Header
   'header.signIn': 'Sign In',
   'header.logout': 'Logout',
+  'header.collection': 'Collection',
   // Landing
   'landing.title': 'Track your Pokemon TCG collection',
   'landing.subtitle': 'Search for any Pokemon, trainer, or energy card and track which cards you own across all sets. Sign in to get started.',
